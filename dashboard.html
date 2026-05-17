@@ -1531,20 +1531,36 @@
     // ── Catalogue ──
     const CATEGORIES = [
       {
-        name: 'Légumes', emoji: '🥦', color: 'bg-green-50 border-green-100',
+        name: 'Légumes', emoji: '🥦', bg: 'rgba(34,197,94,0.13)', border: 'rgba(34,197,94,0.3)',
         items: [
           { name: 'Tomates', emoji: '🍅' }, { name: 'Carottes', emoji: '🥕' },
-          { name: 'Poivrons', emoji: '🫑' }, { name: 'Salade', emoji: '🥬' },
+          { name: 'Poivrons', emoji: '🫑' }, { name: 'Salade verte', emoji: '🥬' },
           { name: 'Oignons', emoji: '🧅' }, { name: 'Courgettes', emoji: '🥒' },
           { name: 'Aubergines', emoji: '🍆' }, { name: 'Brocoli', emoji: '🥦' },
           { name: 'Épinards', emoji: '🌿' }, { name: 'Champignons', emoji: '🍄' },
           { name: 'Concombre', emoji: '🥒' }, { name: 'Maïs', emoji: '🌽' },
           { name: 'Patate douce', emoji: '🍠' }, { name: 'Pommes de terre', emoji: '🥔' },
           { name: 'Poireaux', emoji: '🌿' }, { name: 'Haricots verts', emoji: '🫘' },
+          { name: 'Céleri', emoji: '🌿' }, { name: 'Ail', emoji: '🧄' },
+          { name: 'Petits pois', emoji: '🫛' }, { name: 'Chou-fleur', emoji: '🥦' },
+          { name: 'Chou blanc', emoji: '🥬' }, { name: 'Chou rouge', emoji: '🥬' },
+          { name: 'Radis', emoji: '🔴' }, { name: 'Betterave', emoji: '🟣' },
+          { name: 'Fenouil', emoji: '🌿' }, { name: 'Artichaut', emoji: '🌿' },
+          { name: 'Asperges', emoji: '🌿' }, { name: 'Courge', emoji: '🎃' },
+          { name: 'Potiron', emoji: '🎃' }, { name: 'Navet', emoji: '🥕' },
+          { name: 'Endives', emoji: '🥬' }, { name: 'Roquette', emoji: '🥬' },
+          { name: 'Mâche', emoji: '🌿' }, { name: 'Persil', emoji: '🌿' },
+          { name: 'Basilic', emoji: '🌿' }, { name: 'Coriandre', emoji: '🌿' },
+          { name: 'Menthe', emoji: '🌿' }, { name: 'Thym', emoji: '🌿' },
+          { name: 'Romarin', emoji: '🌿' }, { name: 'Ciboulette', emoji: '🌿' },
+          { name: 'Gingembre', emoji: '🫚' }, { name: 'Piment', emoji: '🌶️' },
+          { name: 'Avocat', emoji: '🥑' }, { name: 'Pak choï', emoji: '🥬' },
+          { name: 'Blette', emoji: '🥬' }, { name: 'Topinambour', emoji: '🥔' },
+          { name: 'Panais', emoji: '🥕' }, { name: 'Butternut', emoji: '🎃' },
         ]
       },
       {
-        name: 'Fruits', emoji: '🍎', color: 'bg-red-50 border-red-100',
+        name: 'Fruits', emoji: '🍎', bg: 'rgba(239,68,68,0.13)', border: 'rgba(239,68,68,0.3)',
         items: [
           { name: 'Pommes', emoji: '🍎' }, { name: 'Bananes', emoji: '🍌' },
           { name: 'Oranges', emoji: '🍊' }, { name: 'Citrons', emoji: '🍋' },
@@ -1553,46 +1569,146 @@
           { name: 'Mangue', emoji: '🥭' }, { name: 'Ananas', emoji: '🍍' },
           { name: 'Cerises', emoji: '🍒' }, { name: 'Myrtilles', emoji: '🫐' },
           { name: 'Kiwi', emoji: '🥝' }, { name: 'Pastèque', emoji: '🍉' },
+          { name: 'Framboises', emoji: '🍓' }, { name: 'Mûres', emoji: '🫐' },
+          { name: 'Abricots', emoji: '🍑' }, { name: 'Prunes', emoji: '🍑' },
+          { name: 'Figues', emoji: '🟣' }, { name: 'Melon', emoji: '🍈' },
+          { name: 'Citron vert', emoji: '🍋' }, { name: 'Pamplemousse', emoji: '🍊' },
+          { name: 'Clémentines', emoji: '🍊' }, { name: 'Mandarine', emoji: '🍊' },
+          { name: 'Litchi', emoji: '🔴' }, { name: 'Papaye', emoji: '🍈' },
+          { name: 'Grenade', emoji: '🍎' }, { name: 'Noix de coco', emoji: '🥥' },
+          { name: 'Dattes', emoji: '🟤' }, { name: 'Pruneaux', emoji: '🔵' },
+          { name: 'Cranberries', emoji: '🔴' }, { name: 'Raisins secs', emoji: '🍇' },
         ]
       },
       {
-        name: 'Laitiers', emoji: '🥛', color: 'bg-blue-50 border-blue-100',
+        name: 'Laitiers', emoji: '🥛', bg: 'rgba(99,102,241,0.13)', border: 'rgba(99,102,241,0.3)',
         items: [
-          { name: 'Lait', emoji: '🥛' }, { name: 'Beurre', emoji: '🧈' },
-          { name: 'Yaourt nature', emoji: '🥛' }, { name: 'Yaourt fruité', emoji: '🍓' },
-          { name: 'Crème fraîche', emoji: '🥛' }, { name: 'Fromage râpé', emoji: '🧀' },
-          { name: 'Camembert', emoji: '🧀' }, { name: 'Emmental', emoji: '🧀' },
-          { name: 'Mozzarella', emoji: '🧀' }, { name: 'Parmesan', emoji: '🧀' },
-          { name: 'Feta', emoji: '🧀' }, { name: 'Chèvre', emoji: '🧀' },
+          { name: 'Lait entier', emoji: '🥛' }, { name: 'Lait demi-écrémé', emoji: '🥛' },
+          { name: 'Lait écrémé', emoji: '🥛' }, { name: 'Lait végétal', emoji: '🥛' },
+          { name: 'Beurre', emoji: '🧈' }, { name: 'Yaourt nature', emoji: '🥛' },
+          { name: 'Yaourt fruité', emoji: '🍓' }, { name: 'Yaourt grec', emoji: '🥛' },
+          { name: 'Crème fraîche', emoji: '🥛' }, { name: 'Crème liquide', emoji: '🥛' },
+          { name: 'Fromage râpé', emoji: '🧀' }, { name: 'Camembert', emoji: '🧀' },
+          { name: 'Emmental', emoji: '🧀' }, { name: 'Mozzarella', emoji: '🧀' },
+          { name: 'Parmesan', emoji: '🧀' }, { name: 'Feta', emoji: '🧀' },
+          { name: 'Chèvre', emoji: '🧀' }, { name: 'Ricotta', emoji: '🧀' },
+          { name: 'Mascarpone', emoji: '🧀' }, { name: 'Gruyère', emoji: '🧀' },
+          { name: 'Comté', emoji: '🧀' }, { name: 'Brie', emoji: '🧀' },
+          { name: 'Roquefort', emoji: '🧀' }, { name: 'Cheddar', emoji: '🧀' },
+          { name: 'Raclette', emoji: '🧀' }, { name: 'Reblochon', emoji: '🧀' },
+          { name: 'Munster', emoji: '🧀' }, { name: 'Beaufort', emoji: '🧀' },
+          { name: 'Burrata', emoji: '🧀' }, { name: 'Philadelphia', emoji: '🧀' },
+          { name: 'Fromage blanc', emoji: '🥛' }, { name: 'Kéfir', emoji: '🥛' },
         ]
       },
       {
-        name: 'Viandes', emoji: '🥩', color: 'bg-rose-50 border-rose-100',
+        name: 'Viandes', emoji: '🥩', bg: 'rgba(220,38,38,0.15)', border: 'rgba(220,38,38,0.32)',
         items: [
-          { name: 'Poulet', emoji: '🍗' }, { name: 'Bœuf haché', emoji: '🥩' },
-          { name: 'Steak', emoji: '🥩' }, { name: 'Porc', emoji: '🥩' },
-          { name: 'Lardons', emoji: '🥓' }, { name: 'Jambon', emoji: '🍖' },
+          { name: 'Poulet entier', emoji: '🍗' }, { name: 'Filet de poulet', emoji: '🍗' },
+          { name: 'Cuisses de poulet', emoji: '🍗' }, { name: 'Ailes de poulet', emoji: '🍗' },
+          { name: 'Bœuf haché', emoji: '🥩' }, { name: 'Steak', emoji: '🥩' },
+          { name: 'Rôti de bœuf', emoji: '🥩' }, { name: 'Côte de bœuf', emoji: '🥩' },
+          { name: 'Filet de bœuf', emoji: '🥩' }, { name: 'Agneau', emoji: '🥩' },
+          { name: 'Côte agneau', emoji: '🥩' }, { name: 'Veau', emoji: '🥩' },
+          { name: 'Escalope', emoji: '🥩' }, { name: 'Côte de veau', emoji: '🥩' },
+          { name: 'Porc haché', emoji: '🥩' }, { name: 'Côte de porc', emoji: '🥩' },
+          { name: 'Rôti de porc', emoji: '🥩' }, { name: 'Travers de porc', emoji: '🥩' },
+          { name: 'Lardons', emoji: '🥓' }, { name: 'Bacon', emoji: '🥓' },
+          { name: 'Jambon blanc', emoji: '🍖' }, { name: 'Jambon de pays', emoji: '🍖' },
           { name: 'Dinde', emoji: '🍗' }, { name: 'Saucisses', emoji: '🌭' },
-          { name: 'Merguez', emoji: '🌭' }, { name: 'Agneau', emoji: '🥩' },
+          { name: 'Chipolatas', emoji: '🌭' }, { name: 'Merguez', emoji: '🌭' },
+          { name: 'Chorizo', emoji: '🌭' }, { name: 'Salami', emoji: '🍖' },
+          { name: 'Canard', emoji: '🦆' }, { name: 'Magret de canard', emoji: '🦆' },
+          { name: 'Foie de veau', emoji: '🥩' }, { name: 'Lapin', emoji: '🐰' },
+          { name: 'Boudin noir', emoji: '🌭' }, { name: 'Andouillette', emoji: '🌭' },
+          { name: 'Pastrami', emoji: '🍖' }, { name: 'Bresaola', emoji: '🍖' },
         ]
       },
       {
-        name: 'Poissons', emoji: '🐟', color: 'bg-sky-50 border-sky-100',
+        name: 'Poissons', emoji: '🐟', bg: 'rgba(14,165,233,0.13)', border: 'rgba(14,165,233,0.3)',
         items: [
-          { name: 'Saumon', emoji: '🐟' }, { name: 'Thon', emoji: '🐠' },
-          { name: 'Cabillaud', emoji: '🐟' }, { name: 'Crevettes', emoji: '🦐' },
-          { name: 'Sardines', emoji: '🐟' }, { name: 'Maquereaux', emoji: '🐠' },
-          { name: 'Dorade', emoji: '🐟' }, { name: 'Moules', emoji: '🦪' },
+          { name: 'Saumon', emoji: '🐟' }, { name: 'Saumon fumé', emoji: '🐟' },
+          { name: 'Thon', emoji: '🐠' }, { name: 'Thon en boîte', emoji: '🐠' },
+          { name: 'Cabillaud', emoji: '🐟' }, { name: 'Sardines', emoji: '🐟' },
+          { name: 'Sardines en boîte', emoji: '🐟' }, { name: 'Maquereaux', emoji: '🐠' },
+          { name: 'Dorade', emoji: '🐟' }, { name: 'Bar', emoji: '🐟' },
+          { name: 'Sole', emoji: '🐟' }, { name: 'Lieu noir', emoji: '🐟' },
+          { name: 'Truite', emoji: '🐟' }, { name: 'Hareng', emoji: '🐟' },
+          { name: 'Anchois', emoji: '🐟' }, { name: 'Lotte', emoji: '🐟' },
+          { name: 'Colin', emoji: '🐟' }, { name: 'Merlu', emoji: '🐟' },
+          { name: 'Turbot', emoji: '🐟' }, { name: 'Tilapia', emoji: '🐟' },
+          { name: 'Crevettes', emoji: '🦐' }, { name: 'Langoustines', emoji: '🦞' },
+          { name: 'Homard', emoji: '🦞' }, { name: 'Crabe', emoji: '🦀' },
+          { name: 'Moules', emoji: '🦪' }, { name: 'Huîtres', emoji: '🦪' },
+          { name: 'Saint-Jacques', emoji: '🐚' }, { name: 'Palourdes', emoji: '🦪' },
+          { name: 'Calmars', emoji: '🦑' }, { name: 'Pieuvre', emoji: '🐙' },
         ]
       },
       {
-        name: 'Œufs & autres', emoji: '🥚', color: 'bg-amber-50 border-amber-100',
+        name: 'Féculents', emoji: '🍞', bg: 'rgba(245,158,11,0.13)', border: 'rgba(245,158,11,0.3)',
         items: [
-          { name: 'Œufs', emoji: '🥚' }, { name: 'Jus d\'orange', emoji: '🍊' },
-          { name: 'Jus de pomme', emoji: '🍎' }, { name: 'Eau gazeuse', emoji: '💧' },
+          { name: 'Riz blanc', emoji: '🍚' }, { name: 'Riz basmati', emoji: '🍚' },
+          { name: 'Riz complet', emoji: '🍚' }, { name: 'Pâtes', emoji: '🍝' },
+          { name: 'Spaghetti', emoji: '🍝' }, { name: 'Penne', emoji: '🍝' },
+          { name: 'Tagliatelles', emoji: '🍝' }, { name: 'Lasagnes', emoji: '🍝' },
+          { name: 'Gnocchi', emoji: '🥟' }, { name: 'Nouilles', emoji: '🍜' },
+          { name: 'Vermicelles', emoji: '🍜' }, { name: 'Quinoa', emoji: '🌾' },
+          { name: 'Semoule', emoji: '🌾' }, { name: 'Couscous', emoji: '🌾' },
+          { name: 'Boulgour', emoji: '🌾' }, { name: 'Polenta', emoji: '🌾' },
+          { name: 'Farine', emoji: '🌾' }, { name: 'Farine complète', emoji: '🌾' },
+          { name: 'Maïzena', emoji: '🌽' }, { name: 'Chapelure', emoji: '🌾' },
+          { name: 'Pain', emoji: '🍞' }, { name: 'Baguette', emoji: '🥖' },
+          { name: 'Pain de mie', emoji: '🍞' }, { name: 'Biscottes', emoji: '🍞' },
+          { name: 'Wraps', emoji: '🫓' }, { name: 'Tortillas', emoji: '🫓' },
+          { name: 'Flocons avoine', emoji: '🌾' }, { name: 'Granola', emoji: '🌾' },
+          { name: 'Muesli', emoji: '🌾' }, { name: 'Céréales', emoji: '🌾' },
+          { name: 'Lentilles', emoji: '🫘' }, { name: 'Pois chiches', emoji: '🫘' },
+          { name: 'Haricots rouges', emoji: '🫘' }, { name: 'Haricots blancs', emoji: '🫘' },
+          { name: 'Fèves', emoji: '🫘' }, { name: 'Edamame', emoji: '🫛' },
+        ]
+      },
+      {
+        name: 'Boissons', emoji: '🥤', bg: 'rgba(168,85,247,0.13)', border: 'rgba(168,85,247,0.3)',
+        items: [
+          { name: 'Eau gazeuse', emoji: '💧' }, { name: 'Eau plate', emoji: '💧' },
+          { name: 'Jus orange', emoji: '🍊' }, { name: 'Jus pomme', emoji: '🍎' },
+          { name: 'Jus ananas', emoji: '🍍' }, { name: 'Jus tomate', emoji: '🍅' },
+          { name: 'Jus raisin', emoji: '🍇' }, { name: 'Jus mangue', emoji: '🥭' },
+          { name: 'Limonade', emoji: '🍋' }, { name: 'Coca-Cola', emoji: '🥤' },
+          { name: 'Soda citron', emoji: '🥤' }, { name: 'Ice Tea', emoji: '🍵' },
+          { name: 'Bière', emoji: '🍺' }, { name: 'Bière sans alcool', emoji: '🍺' },
+          { name: 'Vin blanc', emoji: '🍷' }, { name: 'Vin rouge', emoji: '🍷' },
+          { name: 'Rosé', emoji: '🍷' }, { name: 'Cidre', emoji: '🍺' },
+          { name: 'Champagne', emoji: '🍾' }, { name: 'Prosecco', emoji: '🍾' },
+          { name: 'Lait végétal', emoji: '🥛' }, { name: 'Jus citron vert', emoji: '🍋' },
+          { name: 'Kombucha', emoji: '🫙' }, { name: 'Kéfir boisson', emoji: '🥛' },
+        ]
+      },
+      {
+        name: 'Condiments', emoji: '🫙', bg: 'rgba(234,179,8,0.13)', border: 'rgba(234,179,8,0.3)',
+        items: [
+          { name: 'Sel', emoji: '🧂' }, { name: 'Poivre', emoji: '🌶️' },
+          { name: 'Curcuma', emoji: '🌿' }, { name: 'Cumin', emoji: '🌿' },
+          { name: 'Paprika', emoji: '🌶️' }, { name: 'Curry', emoji: '🌿' },
+          { name: 'Cannelle', emoji: '🌿' }, { name: 'Muscade', emoji: '🌿' },
+          { name: 'Herbes de Provence', emoji: '🌿' }, { name: 'Laurier', emoji: '🌿' },
           { name: 'Mayonnaise', emoji: '🫙' }, { name: 'Ketchup', emoji: '🍅' },
-          { name: 'Moutarde', emoji: '🫙' }, { name: 'Confiture', emoji: '🍓' },
-          { name: 'Nutella', emoji: '🍫' }, { name: 'Cornichons', emoji: '🥒' },
+          { name: 'Moutarde', emoji: '🫙' }, { name: 'Moutarde ancienne', emoji: '🫙' },
+          { name: 'Confiture', emoji: '🍓' }, { name: 'Confiture abricot', emoji: '🍑' },
+          { name: 'Gelée framboise', emoji: '🍓' }, { name: 'Nutella', emoji: '🍫' },
+          { name: 'Beurre cacahuète', emoji: '🥜' }, { name: 'Cornichons', emoji: '🥒' },
+          { name: 'Câpres', emoji: '🫙' }, { name: 'Sauce soja', emoji: '🫙' },
+          { name: 'Vinaigre balsamique', emoji: '🫙' }, { name: 'Vinaigre blanc', emoji: '🫙' },
+          { name: 'Huile olive', emoji: '🫒' }, { name: 'Huile tournesol', emoji: '🌻' },
+          { name: 'Tabasco', emoji: '🌶️' }, { name: 'Sauce barbecue', emoji: '🫙' },
+          { name: 'Sauce teriyaki', emoji: '🫙' }, { name: 'Sauce tomate', emoji: '🍅' },
+          { name: 'Concentré tomate', emoji: '🍅' }, { name: 'Pesto', emoji: '🌿' },
+          { name: 'Miel', emoji: '🍯' }, { name: 'Sirop érable', emoji: '🫙' },
+          { name: 'Aïoli', emoji: '🫙' }, { name: 'Tapenade', emoji: '🫙' },
+          { name: 'Hummus', emoji: '🫘' }, { name: 'Guacamole', emoji: '🥑' },
+          { name: 'Wasabi', emoji: '🌿' }, { name: 'Sauce César', emoji: '🫙' },
+          { name: 'Bouillon cube', emoji: '🫙' }, { name: 'Lait de coco', emoji: '🥥' },
+          { name: 'Crème coco', emoji: '🥥' }, { name: 'Sauce worcestershire', emoji: '🫙' },
         ]
       },
     ];
@@ -1614,10 +1730,11 @@
 
     function renderCategories() {
       document.getElementById('cat-view').innerHTML = CATEGORIES.map(c => `
-        <button onclick="openCategory('${c.name}')"
-          class="flex items-center gap-3 p-4 rounded-2xl border ${c.color} hover:shadow-sm transition-all cursor-pointer text-left group">
+        <button onclick="openCategory(this.dataset.cat)" data-cat="${c.name}"
+          class="flex items-center gap-3 p-4 rounded-2xl transition-all cursor-pointer text-left"
+          style="background:${c.bg};border:1px solid ${c.border}">
           <span class="text-3xl">${c.emoji}</span>
-          <span class="font-medium text-sm" style="color:#292524">${c.name}</span>
+          <span class="font-medium text-sm" style="color:#EDE9E3">${c.name}</span>
         </button>`).join('');
     }
 
@@ -1652,11 +1769,12 @@
       }
       noRes.classList.add('hidden');
       grid.innerHTML = items.map(item => `
-        <button onclick="selectFood('${item.name}', '${item.emoji}')"
-          class="flex flex-col items-center gap-1.5 p-3 rounded-xl hover:shadow-sm transition-all cursor-pointer"
-          style="background:#fff;border:1px solid #e7e5e4">
+        <button onclick="selectFood(this.dataset.name,this.dataset.emoji)"
+          data-name="${item.name.replace(/"/g,'&quot;')}" data-emoji="${item.emoji}"
+          class="flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all cursor-pointer"
+          style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.11)">
           <span class="text-3xl">${item.emoji}</span>
-          <span class="text-xs font-medium text-center leading-tight" style="color:#44403c">${item.name}</span>
+          <span class="text-xs font-medium text-center leading-tight" style="color:#EDE9E3">${item.name}</span>
         </button>`).join('');
     }
 

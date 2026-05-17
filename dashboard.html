@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frigo IA — Mon frigo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,700;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['"Bodoni Moda"', 'Georgia', 'serif'],
+            sans: ['Jost', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            brand: { red: '#6366F1', light: 'rgba(99,102,241,0.12)', bg: '#0C0C10', text: '#EDE9E3', muted: '#6E6A65' }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root { color-scheme: dark; }
+    body { font-family: 'Jost', system-ui, sans-serif; background: #0C0C10; color: #EDE9E3; }
+    .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.09); box-shadow: 0 4px 32px rgba(0,0,0,0.5); }
+    .bg-stone-50, .hover\:bg-stone-50\/60:hover { background: rgba(255,255,255,0.03) !important; }
+    .bg-stone-100 { background: rgba(255,255,255,0.07) !important; }
+    .divide-stone-50 > * + * { border-color: rgba(255,255,255,0.05) !important; }
+    .border-stone-100, .border-stone-200 { border-color: rgba(255,255,255,0.08) !important; }
+    .tag-fresh  { background:#DCFCE7; color:#166534; }
+    .tag-ok     { background:#FEF9C3; color:#854D0E; }
+    .tag-expire { background:#FEE2E2; color:#991B1B; }
+    .tag-none   { background:#F5F5F4; color:#78716C; }
+
+    .modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); backdrop-filter:blur(4px); z-index:50; align-items:center; justify-content:center; }
+    .modal-bg.open { display:flex; }
+
+    @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .fade-up { animation: fadeUp 0.3s ease both; }
+
+    input:focus { outline: none; border-color: #6366F1 !important; box-shadow: 0 0 0 3px rgba(99,102,241,0.18) !important; }
+    .food-item:hover .delete-btn { opacity: 1; }
+    .delete-btn { opacity: 0; transition: opacity 0.15s; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 0.8s linear infinite; }
+
+    @keyframes emojiPop { from{opacity:0;transform:scale(0) rotate(-20deg)} 60%{transform:scale(1.25) rotate(5deg)} to{opacity:1;transform:scale(1) rotate(0deg)} }
+    @keyframes overlayIn { from{opacity:0} to{opacity:1} }
+
+    .fridge-door-3d {
+      transform-origin: left center;
+      transform: perspective(550px) rotateY(0deg);
+      transition: transform 0.85s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .fridge-door-3d.open { transform: perspective(550px) rotateY(-82deg); }
+  </style>
+</head>
+
+<body class="min-h-screen">
+
+  <!-- NAVBAR -->
+  <nav class="glass sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b border-stone-100">
+    <div class="flex items-center gap-3">
+      <a href="index.html" class="flex items-center gap-2 cursor-pointer">
+        <span class="w-8 h-8 rounded-xl bg-brand-red flex items-center justify-center">
+          <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/>
+          </svg>
+        </span>
+        <span class="font-semibold text-brand-text">Frigo IA</span>
+      </a>
+      <a href="index.html" class="flex items-center gap-1.5 text-brand-muted text-sm font-light px-3 py-1.5 rounded-xl hover:bg-stone-100 hover:text-brand-text transition-colors cursor-pointer">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Accueil
+      </a>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="nav-username" class="text-sm text-brand-muted font-light hidden sm:block"></span>
+      <div class="w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white text-sm font-semibold" id="nav-avatar">?</div>
+      <button onclick="logout()" class="flex items-center gap-1.5 text-brand-muted text-sm font-light px-3 py-1.5 rounded-xl hover:bg-stone-100 hover:text-brand-red transition-colors cursor-pointer" title="Se déconnecter">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="max-w-2xl mx-auto px-4 py-10">
+
+    <!-- Titre -->
+    <div class="mb-8">
+      <h1 class="font-display text-4xl font-bold text-brand-text">Mon Frigo</h1>
+      <p class="text-brand-muted text-sm font-light mt-1" id="item-count">0 analyse</p>
+    </div>
+
+    <!-- Deux boutons d'ajout -->
+    <div class="grid grid-cols-2 gap-3 mb-8">
+      <button id="scan-photo-btn" class="glass rounded-2xl p-5 flex flex-col items-center gap-3 hover:shadow-md hover:border-red-200 transition-all cursor-pointer group border border-transparent">
+        <div class="w-12 h-12 rounded-xl bg-brand-light flex items-center justify-center group-hover:bg-brand-red transition-colors">
+          <svg class="w-5 h-5 text-brand-red group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </div>
+        <div class="text-center">
+          <p class="font-medium text-brand-text text-sm">Photo du frigo</p>
+          <p id="scan-plan-badge" class="text-xs font-light mt-0.5" style="color:rgba(255,255,255,0.35)">Chargement…</p>
+        </div>
+      </button>
+      <button onclick="openManualModal()" class="glass rounded-2xl p-5 flex flex-col items-center gap-3 hover:shadow-md hover:border-red-200 transition-all cursor-pointer group border border-transparent">
+        <div class="w-12 h-12 rounded-xl bg-brand-light flex items-center justify-center group-hover:bg-brand-red transition-colors">
+          <svg class="w-5 h-5 text-brand-red group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </div>
+        <div class="text-center">
+          <p class="font-medium text-brand-text text-sm">Ajouter à la main</p>
+          <p class="text-brand-muted text-xs font-light mt-0.5">Dans l'onglet actif</p>
+        </div>
+      </button>
+    </div>
+
+    <!-- ── Widget Frigo Interactif ── -->
+    <div id="fridge-widget" class="hidden mb-8">
+      <div class="glass rounded-2xl px-5 py-4 flex items-center gap-5 cursor-pointer" onclick="toggleFridgeWidget()" onmouseenter="peekFridge(true)" onmouseleave="peekFridge(false)">
+
+        <!-- Mini fridge 3D -->
+        <div class="relative flex-shrink-0" style="width:58px;height:76px">
+          <!-- Interior -->
+          <div class="absolute inset-0 rounded-xl overflow-hidden" style="background:#07070e;border:1.5px solid rgba(99,102,241,0.25)">
+            <div class="absolute top-0 left-0 right-0" style="height:34%;background:#040409;border-bottom:1px solid rgba(99,102,241,0.15)"></div>
+            <div id="widget-inside" class="absolute inset-x-1 bottom-0 flex flex-wrap gap-px content-start overflow-hidden" style="top:35%;font-size:9px;line-height:12px"></div>
+          </div>
+          <!-- Door -->
+          <div id="widget-door" class="absolute inset-0 rounded-xl fridge-door-3d" style="background:linear-gradient(155deg,#312e81,#4f46e5,#818cf8);border:1.5px solid rgba(99,102,241,0.7)">
+            <div class="absolute right-1.5 top-1/2 -translate-y-1/2 w-[3px] h-9 rounded-full" style="background:rgba(255,255,255,0.22)"></div>
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold text-brand-text text-sm">Mon Frigo</p>
+          <p id="widget-label" class="text-xs text-brand-muted font-light mt-0.5">Survoler pour regarder à l'intérieur</p>
+        </div>
+
+        <!-- Arrow -->
+        <svg id="widget-arrow" class="w-4 h-4 text-brand-muted flex-shrink-0 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 9l6 6 6-6"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Onglets sessions -->
+    <div id="sessions-area" class="hidden mb-2">
+      <div id="tabs-row" class="flex gap-2 overflow-x-auto pb-1 mb-3" style="scrollbar-width:none"></div>
+
+      <!-- Contenu de la session active -->
+      <div class="glass rounded-2xl overflow-hidden">
+
+        <!-- Alertes -->
+        <div id="alerts-section" class="hidden border-b border-stone-100">
+          <div class="bg-red-50 px-5 py-3">
+            <p class="text-xs font-medium text-red-700 mb-2 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              À consommer rapidement
+            </p>
+            <div id="alerts-list" class="flex flex-wrap gap-2"></div>
+          </div>
+        </div>
+
+        <!-- Aliments -->
+        <div id="food-section">
+          <p class="px-5 pt-4 pb-2 text-xs font-medium text-brand-muted uppercase tracking-wider">Dans le frigo</p>
+          <div id="food-list" class="flex flex-col divide-y divide-stone-50"></div>
+        </div>
+
+        <!-- Recettes -->
+        <div id="recipes-section" class="hidden border-t border-stone-100">
+          <div class="px-5 pt-4 pb-3 flex items-center justify-between">
+            <p class="text-xs font-medium text-brand-muted uppercase tracking-wider">Recettes suggérées</p>
+            <button onclick="fetchAIRecipes()" id="ai-recipes-btn" class="flex items-center gap-1.5 bg-brand-red text-white text-xs font-medium px-3 py-1.5 rounded-xl hover:bg-red-700 transition-colors cursor-pointer">
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+              </svg>
+              Générer avec l'IA
+            </button>
+          </div>
+          <div id="recipes-list" class="flex flex-col divide-y divide-stone-50 px-5 pb-3"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Historique global -->
+    <div class="mb-10 mt-4">
+      <button onclick="toggleHistory()" class="w-full flex items-center justify-between glass rounded-2xl px-5 py-4 hover:shadow-md transition-shadow cursor-pointer group">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-stone-100 flex items-center justify-center group-hover:bg-brand-light transition-colors">
+            <svg class="w-4 h-4 text-brand-muted group-hover:text-brand-red transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <span class="font-semibold text-brand-text text-sm">Historique</span>
+          <span id="history-badge" class="text-xs bg-stone-100 text-brand-muted px-2 py-0.5 rounded-full font-medium">0</span>
+        </div>
+        <svg id="history-chevron" class="w-4 h-4 text-brand-muted transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 9l6 6 6-6"/>
+        </svg>
+      </button>
+      <div id="history-panel" class="hidden mt-2 glass rounded-2xl overflow-hidden">
+        <div id="history-list" class="flex flex-col divide-y divide-stone-50"></div>
+        <div id="history-empty" class="hidden text-center py-6 text-brand-muted text-sm font-light">Aucune activité pour l'instant.</div>
+        <div class="p-3 border-t border-stone-100 flex justify-end">
+          <button onclick="clearHistory()" class="text-xs text-stone-400 hover:text-brand-red transition-colors cursor-pointer font-medium">Effacer l'historique</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications email -->
+    <div id="notif-section" class="mb-8 glass rounded-2xl overflow-hidden">
+      <button onclick="toggleNotifPanel()" class="w-full flex items-center justify-between px-5 py-4 hover:shadow-md transition-shadow cursor-pointer group">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-stone-100 flex items-center justify-center group-hover:bg-brand-light transition-colors">
+            <svg class="w-4 h-4 text-brand-muted group-hover:text-brand-red transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+            </svg>
+          </div>
+          <div>
+            <span class="font-semibold text-brand-text text-sm">Notifications email</span>
+            <p id="notif-status-line" class="text-xs text-brand-muted font-light mt-0.5">Chargement…</p>
+          </div>
+        </div>
+        <svg id="notif-chevron" class="w-4 h-4 text-brand-muted transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div id="notif-panel" class="hidden border-t border-stone-100 px-5 py-4">
+        <p class="text-xs text-brand-muted font-light mb-3">Reçois un email quand tes aliments arrivent à expiration (dans les 3 jours).</p>
+        <div class="flex gap-2">
+          <input id="notif-email-input" type="email" placeholder="ton@email.com"
+            class="flex-1 px-3 py-2 rounded-xl text-sm text-brand-text"
+            style="background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.1);outline:none;font-family:'Jost',sans-serif" />
+          <button onclick="saveNotifEmail()" class="px-4 py-2 rounded-xl text-xs font-bold text-white cursor-pointer transition-all" style="background:#6366F1">
+            Sauvegarder
+          </button>
+        </div>
+        <div id="notif-test-wrap" class="hidden mt-3">
+          <button onclick="testNotification()" id="notif-test-btn" class="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl cursor-pointer transition-all" style="background:rgba(99,102,241,0.15);color:rgba(139,148,255,0.9)">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            Envoyer un email de test maintenant
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- État vide -->
+    <div id="empty-state" class="text-center py-16">
+      <div class="w-16 h-16 rounded-2xl bg-stone-100 flex items-center justify-center mx-auto mb-4">
+        <svg class="w-7 h-7 text-stone-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="3"/><path d="M5 10h14M10 6v0M10 14v4"/>
+        </svg>
+      </div>
+      <p class="text-brand-muted font-light text-sm">Aucune analyse.<br/>Scannez ou ajoutez des aliments pour commencer.</p>
+    </div>
+
+  </main>
+
+  <!-- ══════════════════════════════════
+       FRIDGE ANIMATION OVERLAY (plein écran)
+  ═══════════════════════════════════ -->
+  <div id="fridge-overlay" class="hidden fixed inset-0 flex flex-col items-center justify-center gap-6 select-none" style="z-index:999;background:rgba(12,12,16,0.97);backdrop-filter:blur(14px);animation:overlayIn 0.3s ease both">
+
+    <p id="fov-title" class="text-base font-semibold text-brand-text tracking-wide">Ouverture du frigo…</p>
+
+    <!-- Fridge scene (160×248px) -->
+    <div id="fov-scene" class="relative" style="width:160px;height:248px">
+
+      <!-- Interior (always behind door) -->
+      <div class="absolute inset-0 rounded-2xl overflow-hidden" style="background:#07070e;border:2px solid rgba(99,102,241,0.28)">
+        <!-- Freezer top section -->
+        <div class="absolute top-0 left-0 right-0 flex items-center justify-center" style="height:35%;background:#040409;border-bottom:1px solid rgba(99,102,241,0.18)">
+          <span class="text-[8px] uppercase tracking-[0.2em] font-semibold" style="color:rgba(99,102,241,0.28)">CONGÉLATEUR</span>
+        </div>
+        <!-- Fridge section -->
+        <div class="absolute left-0 right-0 bottom-0" style="top:35%">
+          <div class="absolute left-3 right-3 h-px" style="top:32%;background:rgba(99,102,241,0.13)"></div>
+          <div class="absolute left-3 right-3 h-px" style="top:64%;background:rgba(99,102,241,0.13)"></div>
+          <!-- Items that appear inside -->
+          <div id="fov-inside-items" class="absolute inset-2 flex flex-wrap gap-px content-start overflow-hidden" style="font-size:14px;line-height:18px"></div>
+        </div>
+        <!-- Inner light strip (top) -->
+        <div class="absolute top-[35%] left-0 right-0 h-3" style="background:linear-gradient(to bottom,rgba(99,102,241,0.08),transparent)"></div>
+      </div>
+
+      <!-- Door (3D rotating) -->
+      <div id="fov-door" class="absolute inset-0 rounded-2xl fridge-door-3d" style="background:linear-gradient(155deg,#1e1b60 0%,#312e81 25%,#4f46e5 60%,#6366f1 80%,#818cf8 100%);border:2px solid rgba(99,102,241,0.8);box-shadow:0 8px 40px rgba(99,102,241,0.35),inset 0 1px 0 rgba(255,255,255,0.12)">
+        <!-- Door inner panel -->
+        <div class="absolute inset-[8px] rounded-xl border border-white/[0.07]"></div>
+        <!-- Handle (right side, since hinge is left) -->
+        <div class="absolute right-3 top-1/2 -translate-y-1/2 w-[5px] h-14 rounded-full" style="background:rgba(255,255,255,0.22);box-shadow:0 2px 8px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.3)"></div>
+        <!-- Logo/branding on door -->
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
+          <svg class="w-9 h-9" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/>
+          </svg>
+          <span style="color:rgba(255,255,255,0.1);font-size:9px;letter-spacing:0.25em;font-weight:700">FRIGO IA</span>
+        </div>
+      </div>
+    </div>
+
+    <p id="fov-counter" class="text-sm font-medium h-5" style="color:rgba(139,148,255,0.75)"></p>
+  </div>
+
+  <!-- ══════════════════════════════════
+       MODAL — PHOTO
+  ═══════════════════════════════════ -->
+  <div class="modal-bg" id="photo-modal">
+    <div class="glass rounded-3xl p-7 w-full max-w-sm mx-4 fade-up">
+
+      <div id="photo-step-1">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="font-semibold text-brand-text">Photo du frigo</h2>
+          <button onclick="closeModal('photo-modal')" class="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center cursor-pointer hover:bg-stone-200 transition-colors">
+            <svg class="w-3.5 h-3.5 text-brand-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <label class="block border-2 border-dashed border-red-200 rounded-2xl p-10 text-center cursor-pointer hover:border-brand-red hover:bg-red-50/30 transition-all">
+          <input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(this)" />
+          <div class="w-14 h-14 rounded-2xl bg-brand-light flex items-center justify-center mx-auto mb-4">
+            <svg class="w-7 h-7 text-brand-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+          <p class="text-sm font-medium text-brand-text mb-1">Appuie pour choisir une photo</p>
+          <p class="text-xs text-brand-muted font-light">L'analyse démarre automatiquement</p>
+        </label>
+      </div>
+
+      <div id="photo-step-2" class="hidden text-center py-4">
+        <svg class="w-10 h-10 text-brand-red mx-auto mb-4 spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+        </svg>
+        <p class="font-medium text-brand-text" id="scan-status">Analyse en cours…</p>
+        <p class="text-xs text-brand-muted font-light mt-1">L'IA identifie vos aliments</p>
+      </div>
+
+      <div id="photo-step-anim" class="hidden"></div>
+
+      <div id="photo-step-3" class="hidden">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+          <div>
+            <p class="font-semibold text-brand-text text-sm">Analyse terminée</p>
+            <p class="text-xs text-brand-muted font-light" id="detected-count">0 aliment détecté</p>
+          </div>
+        </div>
+
+        <p class="text-xs text-brand-muted font-medium mb-3">Aliments détectés — modifiez si besoin</p>
+        <div id="detected-items" class="flex flex-col gap-2 mb-5 max-h-48 overflow-y-auto pr-1"></div>
+
+        <button onclick="confirmPhotoScan()" class="w-full bg-brand-red text-white font-medium py-3 rounded-xl hover:bg-red-700 transition-colors cursor-pointer text-sm">
+          Ajouter au frigo
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════
+       MODAL — AJOUT MANUEL
+  ═══════════════════════════════════ -->
+  <div class="modal-bg" id="manual-modal">
+    <div class="glass rounded-3xl w-full max-w-md mx-4 fade-up overflow-hidden flex flex-col" style="max-height:88vh">
+
+      <!-- Header -->
+      <div class="px-5 pt-5 pb-4 border-b border-stone-100 flex-shrink-0">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <button id="back-btn" onclick="backToCategories()" class="hidden w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center cursor-pointer hover:bg-stone-200 transition-colors">
+              <svg class="w-3.5 h-3.5 text-brand-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+            </button>
+            <h2 class="font-semibold text-brand-text" id="manual-title">Ajouter un aliment</h2>
+          </div>
+          <button onclick="closeModal('manual-modal')" class="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center cursor-pointer hover:bg-stone-200 transition-colors">
+            <svg class="w-3.5 h-3.5 text-brand-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <!-- Barre de recherche (visible dans la catégorie) -->
+        <div id="search-bar" class="hidden relative">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input id="food-search" type="text" placeholder="Rechercher…"
+            class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-stone-200 bg-white text-brand-text text-sm placeholder:text-stone-300"
+            oninput="filterFoods(this.value)" />
+        </div>
+      </div>
+
+      <!-- Contenu scrollable -->
+      <div class="overflow-y-auto flex-1">
+
+        <!-- Vue catégories -->
+        <div id="cat-view" class="p-4 grid grid-cols-2 gap-3">
+          <!-- généré par JS -->
+        </div>
+
+        <!-- Vue aliments -->
+        <div id="food-view" class="hidden p-4">
+          <div id="food-grid" class="grid grid-cols-3 gap-2"></div>
+          <p id="no-results" class="hidden text-center text-brand-muted text-sm font-light py-6">Aucun résultat</p>
+        </div>
+
+      </div>
+
+      <!-- Footer date (visible quand un aliment est sélectionné) -->
+      <div id="date-footer" class="hidden border-t border-stone-100 p-4 flex-shrink-0">
+        <div class="flex items-center gap-2 mb-3">
+          <span id="selected-emoji" class="text-2xl"></span>
+          <span id="selected-name" class="font-medium text-brand-text text-sm"></span>
+        </div>
+        <label class="text-xs font-medium text-brand-muted mb-1.5 block">
+          Date de péremption <span class="text-stone-300 font-light">(optionnelle)</span>
+        </label>
+        <div class="flex gap-2">
+          <input id="manual-date" type="date"
+            class="flex-1 px-3 py-2.5 rounded-xl border border-stone-200 bg-white text-brand-text text-sm" />
+          <button onclick="confirmManualAdd()" class="bg-brand-red text-white font-medium px-5 py-2.5 rounded-xl hover:bg-red-700 transition-colors cursor-pointer text-sm whitespace-nowrap">
+            Ajouter
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════
+       MODAL — RECETTE
+  ═══════════════════════════════════ -->
+  <div class="modal-bg" id="recipe-modal">
+    <div class="glass rounded-3xl w-full max-w-md mx-4 fade-up overflow-hidden flex flex-col" style="max-height:90vh">
+
+      <!-- Header -->
+      <div class="p-6 pb-4 flex items-start gap-4 border-b border-stone-100">
+        <span id="recipe-emoji" class="text-4xl flex-shrink-0">🍳</span>
+        <div class="flex-1 min-w-0">
+          <h2 id="recipe-title" class="font-display text-xl font-bold text-brand-text leading-tight"></h2>
+          <p id="recipe-meta" class="text-xs text-brand-muted font-light mt-1"></p>
+        </div>
+        <button onclick="closeModal('recipe-modal')" class="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center cursor-pointer hover:bg-stone-200 transition-colors flex-shrink-0 mt-0.5">
+          <svg class="w-3.5 h-3.5 text-brand-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Contenu scrollable -->
+      <div class="overflow-y-auto flex-1 flex flex-col">
+
+        <!-- Image hero : Canvas instantané + vraie image IA en fond -->
+        <div id="recipe-modal-img-wrap" class="h-56 overflow-hidden relative flex-shrink-0" style="background:#07070e">
+          <canvas id="recipe-modal-canvas" class="absolute inset-0 w-full h-full" style="z-index:1;transition:opacity 0.6s ease"></canvas>
+          <img id="recipe-modal-img" class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-700" style="z-index:2" />
+          <div id="recipe-img-loader" class="absolute inset-0 hidden" style="z-index:3">
+            <div class="absolute inset-0 flex flex-col items-center justify-center gap-3" style="background:rgba(7,7,14,0.55);backdrop-filter:blur(2px)">
+              <div style="width:40px;height:40px;border:3px solid rgba(255,255,255,0.12);border-top-color:#6366F1;border-radius:50%;animation:spin 0.9s linear infinite"></div>
+              <div class="text-center">
+                <p class="text-white text-sm font-medium" id="recipe-img-status">Génération de l'image IA…</p>
+                <p class="text-white/40 text-xs mt-0.5">~30 secondes</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 flex flex-col gap-6">
+
+          <!-- Nutrition -->
+          <div id="recipe-nutrition" class="mb-2"></div>
+
+          <!-- Ingrédients -->
+          <div>
+            <h3 class="font-semibold text-brand-text text-sm mb-3 flex items-center gap-2">
+              <svg class="w-4 h-4 text-brand-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+              </svg>
+              Ingrédients
+            </h3>
+            <ul id="recipe-ingredients" class="flex flex-col gap-2 text-sm text-brand-text font-light"></ul>
+          </div>
+
+          <!-- Étapes -->
+          <div>
+            <h3 class="font-semibold text-brand-text text-sm mb-3 flex items-center gap-2">
+              <svg class="w-4 h-4 text-brand-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+              Préparation
+            </h3>
+            <ul id="recipe-steps" class="flex flex-col gap-4"></ul>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ── Auth ──
+    if (!localStorage.getItem('frigo_token')) {
+      window.location.href = 'login.html';
+    }
+    function apiHeaders() {
+      return { 'Content-Type': 'application/json', 'X-Token': localStorage.getItem('frigo_token') || '' };
+    }
+    function logout() {
+      localStorage.removeItem('frigo_token');
+      window.location.href = 'login.html';
+    }
+    const _user    = localStorage.getItem('frigo_user')    || 'admin';
+    const _picture = localStorage.getItem('frigo_picture') || '';
+    document.getElementById('nav-username').textContent = _user;
+    document.getElementById('nav-username').classList.remove('hidden');
+    const _avatar = document.getElementById('nav-avatar');
+    if (_picture) {
+      _avatar.innerHTML = `<img src="${_picture}" class="w-full h-full object-cover rounded-full" referrerpolicy="no-referrer" />`;
+      _avatar.style.padding = '0';
+    } else {
+      _avatar.textContent = _user[0].toUpperCase();
+    }
+
+    // ── State ──
+    let sessions       = JSON.parse(localStorage.getItem('frigo_sessions')  || '[]');
+    let activeId       = parseInt(localStorage.getItem('frigo_activeId')    || '0');
+    let history        = JSON.parse(localStorage.getItem('frigo_history')   || '[]').map(h => ({ ...h, date: new Date(h.date) }));
+    let nextSessionId  = parseInt(localStorage.getItem('frigo_nextSid')     || '1');
+    let nextId         = parseInt(localStorage.getItem('frigo_nextId')      || '1');
+
+    function save() {
+      localStorage.setItem('frigo_sessions',  JSON.stringify(sessions));
+      localStorage.setItem('frigo_activeId',  activeId);
+      localStorage.setItem('frigo_history',   JSON.stringify(history));
+      localStorage.setItem('frigo_nextSid',   nextSessionId);
+      localStorage.setItem('frigo_nextId',    nextId);
+    }
+
+    // ── Plan ──
+    function isPremium() { return localStorage.getItem('frigo_subscribed') === '1'; }
+
+    function getScanCount() {
+      const today = new Date().toISOString().slice(0, 10);
+      const d = JSON.parse(localStorage.getItem('frigo_scan_today') || '{}');
+      return d.date === today ? (d.count || 0) : 0;
+    }
+    function incrementScanCount() {
+      const today = new Date().toISOString().slice(0, 10);
+      const d = JSON.parse(localStorage.getItem('frigo_scan_today') || '{}');
+      localStorage.setItem('frigo_scan_today', JSON.stringify({ date: today, count: (d.date === today ? d.count : 0) + 1 }));
+      updateScanBtn();
+    }
+    function updateScanBtn() {
+      const btn   = document.getElementById('scan-photo-btn');
+      const badge = document.getElementById('scan-plan-badge');
+      if (!btn || !badge) return;
+      if (isPremium()) {
+        badge.textContent = '✦ Illimité';
+        badge.style.color = '#6EE7B7';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.onclick = openPhotoModal;
+      } else {
+        const used = getScanCount();
+        if (used >= 1) {
+          badge.textContent = 'Limite atteinte — Passer à Premium';
+          badge.style.color = '#F87171';
+          btn.style.opacity = '0.55';
+          btn.onclick = () => window.location.href = 'pricing.html';
+        } else {
+          badge.textContent = '1 analyse gratuite / jour';
+          badge.style.color = 'rgba(255,255,255,0.35)';
+          btn.style.opacity = '1';
+          btn.onclick = openPhotoModal;
+        }
+      }
+    }
+
+    function activeSession() {
+      return sessions.find(s => s.id === activeId) || null;
+    }
+
+    function setActive(id) {
+      activeId = id;
+      save();
+      renderTabs();
+      renderSession();
+    }
+
+    function deleteSession(id) {
+      sessions = sessions.filter(s => s.id !== id);
+      if (activeId === id) activeId = sessions.length ? sessions[sessions.length - 1].id : 0;
+      save();
+      renderTabs();
+      renderSession();
+    }
+
+    // ── Onglets ──
+    function renderTabs() {
+      const area    = document.getElementById('sessions-area');
+      const row     = document.getElementById('tabs-row');
+      const countEl = document.getElementById('item-count');
+      const empty   = document.getElementById('empty-state');
+
+      countEl.textContent = sessions.length === 0 ? '0 analyse'
+        : `${sessions.length} analyse${sessions.length > 1 ? 's' : ''}`;
+      empty.classList.toggle('hidden', sessions.length > 0);
+      area.classList.toggle('hidden', sessions.length === 0);
+
+      row.innerHTML = sessions.map(s => {
+        const isActive = s.id === activeId;
+        return `
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <button onclick="setActive(${s.id})"
+              class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer whitespace-nowrap
+                ${isActive ? 'bg-brand-red text-white shadow-md shadow-red-100' : 'glass text-brand-muted hover:text-brand-text'}">
+              <span>${s.type === 'scan' ? '📷' : '✏️'}</span>
+              ${s.label}
+              <span class="${isActive ? 'bg-white/20 text-white' : 'bg-stone-100 text-brand-muted'} px-1.5 py-0.5 rounded-full text-[10px] font-semibold">${s.foods.length}</span>
+            </button>
+            <button onclick="deleteSession(${s.id})"
+              class="w-5 h-5 rounded-lg flex items-center justify-center cursor-pointer text-stone-300 hover:text-brand-red hover:bg-red-50 transition-colors flex-shrink-0">
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>`;
+      }).join('');
+    }
+
+    // ── Historique (snapshots frigo) ──
+    function addFridgeSnapshot(foods, label) {
+      history.unshift({
+        type: 'fridge_snap',
+        data: { foods: foods.map(f => ({ name: f.name, emoji: f.emoji || '🥦' })), label, count: foods.length },
+        date: new Date()
+      });
+      if (history.length > 50) history.length = 50;
+      save();
+      renderHistory();
+    }
+
+    function formatTime(date) {
+      const now  = new Date();
+      const diff = Math.floor((now - date) / 1000);
+      if (diff < 60)    return "À l'instant";
+      if (diff < 3600)  return `Il y a ${Math.floor(diff/60)} min`;
+      if (diff < 86400) return `Il y a ${Math.floor(diff/3600)} h`;
+      return date.toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
+    }
+
+    function renderHistory() {
+      const badge = document.getElementById('history-badge');
+      const list  = document.getElementById('history-list');
+      const empty = document.getElementById('history-empty');
+      const snaps = history.filter(h => h.type === 'fridge_snap');
+
+      if (!isPremium()) {
+        badge.innerHTML = `<svg class="w-3 h-3 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+        empty.classList.add('hidden');
+        list.innerHTML = `
+          <div class="px-6 py-8 text-center">
+            <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style="background:rgba(99,102,241,0.12);font-size:28px">🔒</div>
+            <p class="font-semibold text-brand-text text-sm mb-1">Historique réservé au plan Premium</p>
+            <p class="text-brand-muted text-xs font-light mb-5 max-w-xs mx-auto">Retrouve tous tes anciens frigos, réutilise des aliments et consulte l'historique de tes scans.</p>
+            <a href="pricing.html" class="inline-flex items-center gap-2 text-xs font-bold px-5 py-2.5 rounded-xl transition-all" style="background:linear-gradient(135deg,#4F46E5,#6366F1);color:#fff;box-shadow:0 4px 16px rgba(99,102,241,0.35)">
+              ✦ Passer à Premium — 9,99€/mois
+            </a>
+          </div>`;
+        return;
+      }
+
+      badge.textContent = snaps.length;
+      if (snaps.length === 0) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      list.innerHTML = snaps.map((h, snapIdx) => {
+        const d    = h.data;
+        const show = d.foods.slice(0, 14);
+        const extra = d.count - show.length;
+        return `
+          <div class="border-b border-stone-100 last:border-0" id="snap-${snapIdx}">
+            <!-- Header -->
+            <div class="px-4 pt-4 pb-3">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="w-7 h-7 rounded-xl flex items-center justify-center text-sm flex-shrink-0" style="background:rgba(99,102,241,0.15)">📷</span>
+                  <span class="text-sm font-semibold text-brand-text">${d.label}</span>
+                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full" style="background:rgba(99,102,241,0.15);color:rgba(139,148,255,0.9)">${d.count} aliment${d.count>1?'s':''}</span>
+                </div>
+                <span class="text-xs font-light" style="color:rgba(255,255,255,0.25)">${formatTime(h.date)}</span>
+              </div>
+              <div class="flex flex-wrap items-center gap-1 mb-3" style="font-size:19px;line-height:1.4">
+                ${show.map(f => `<span title="${f.name}">${f.emoji}</span>`).join('')}
+                ${extra > 0 ? `<span class="text-xs text-brand-muted font-light ml-1">+${extra}</span>` : ''}
+              </div>
+              <button onclick="toggleSnapPicker(${snapIdx})" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl cursor-pointer transition-all" style="background:rgba(99,102,241,0.15);color:rgba(139,148,255,0.95)" id="snap-btn-${snapIdx}">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                Réutiliser ces aliments
+              </button>
+            </div>
+
+            <!-- Picker (hidden by default) -->
+            <div id="snap-picker-${snapIdx}" class="hidden px-4 pb-4">
+              <p class="text-xs text-brand-muted font-medium mb-3 uppercase tracking-wider">Sélectionne les aliments à ajouter :</p>
+              <div class="flex flex-wrap gap-2 mb-4">
+                ${d.foods.map((f, fi) => `
+                  <button onclick="toggleSnapItem(${snapIdx},${fi})" id="snap-item-${snapIdx}-${fi}"
+                    class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium cursor-pointer transition-all border snap-item-btn"
+                    style="background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);color:#EDE9E3">
+                    <span>${f.emoji}</span><span class="text-xs">${f.name}</span>
+                  </button>`).join('')}
+              </div>
+              <div class="flex items-center justify-between gap-3">
+                <span id="snap-sel-count-${snapIdx}" class="text-xs text-brand-muted font-light">Aucun sélectionné</span>
+                <button onclick="addFromHistory(${snapIdx})" id="snap-add-btn-${snapIdx}"
+                  class="flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl cursor-pointer transition-all opacity-40 pointer-events-none"
+                  style="background:#6366F1;color:#fff">
+                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                  Ajouter au frigo
+                </button>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // Track selected items per snapshot
+    const _snapSel = {};
+
+    function toggleSnapPicker(snapIdx) {
+      const picker = document.getElementById(`snap-picker-${snapIdx}`);
+      const btn    = document.getElementById(`snap-btn-${snapIdx}`);
+      const open   = !picker.classList.contains('hidden');
+      picker.classList.toggle('hidden', open);
+      if (!open) {
+        btn.style.background = 'rgba(99,102,241,0.3)';
+        btn.innerHTML = `<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg> Masquer`;
+        _snapSel[snapIdx] = new Set();
+      } else {
+        btn.style.background = 'rgba(99,102,241,0.15)';
+        btn.innerHTML = `<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Réutiliser ces aliments`;
+      }
+    }
+
+    function toggleSnapItem(snapIdx, foodIdx) {
+      if (!_snapSel[snapIdx]) _snapSel[snapIdx] = new Set();
+      const sel = _snapSel[snapIdx];
+      const el  = document.getElementById(`snap-item-${snapIdx}-${foodIdx}`);
+      if (sel.has(foodIdx)) {
+        sel.delete(foodIdx);
+        el.style.background = 'rgba(255,255,255,0.05)';
+        el.style.borderColor = 'rgba(255,255,255,0.1)';
+        el.style.color = '#EDE9E3';
+      } else {
+        sel.add(foodIdx);
+        el.style.background = 'rgba(99,102,241,0.25)';
+        el.style.borderColor = 'rgba(99,102,241,0.6)';
+        el.style.color = '#c7d2fe';
+      }
+      const count   = sel.size;
+      const countEl = document.getElementById(`snap-sel-count-${snapIdx}`);
+      const addBtn  = document.getElementById(`snap-add-btn-${snapIdx}`);
+      countEl.textContent = count === 0 ? 'Aucun sélectionné' : `${count} aliment${count > 1 ? 's' : ''} sélectionné${count > 1 ? 's' : ''}`;
+      addBtn.style.opacity = count > 0 ? '1' : '0.4';
+      addBtn.style.pointerEvents = count > 0 ? 'auto' : 'none';
+    }
+
+    function addFromHistory(snapIdx) {
+      const sel   = _snapSel[snapIdx];
+      if (!sel || sel.size === 0) return;
+      const snaps = history.filter(h => h.type === 'fridge_snap');
+      const snap  = snaps[snapIdx];
+      if (!snap) return;
+
+      const selectedFoods = [...sel].map(fi => snap.data.foods[fi]).filter(Boolean);
+      const newFoods = selectedFoods.map(f => ({ id: nextId++, name: f.name, emoji: f.emoji, expiry: null }));
+
+      // Add to active session or create a new one
+      let session = activeSession();
+      if (!session) {
+        const now = new Date();
+        const sid = nextSessionId++;
+        session = { id: sid, label: now.toLocaleDateString('fr-FR', { day:'numeric', month:'short' }), type: 'scan', date: now.toISOString(), foods: [] };
+        sessions.push(session);
+        activeId = sid;
+      }
+      session.foods.push(...newFoods);
+      save();
+      render();
+
+      // Visual feedback
+      const addBtn = document.getElementById(`snap-add-btn-${snapIdx}`);
+      addBtn.innerHTML = `<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Ajouté !`;
+      addBtn.style.background = '#16a34a';
+      setTimeout(() => toggleSnapPicker(snapIdx), 1200);
+    }
+
+    function toggleHistory() {
+      const panel = document.getElementById('history-panel');
+      const chevron = document.getElementById('history-chevron');
+      const open = !panel.classList.contains('hidden');
+      panel.classList.toggle('hidden', open);
+      chevron.style.transform = open ? '' : 'rotate(180deg)';
+      localStorage.setItem('frigo_history_open', open ? '0' : '1');
+    }
+
+    function restoreHistoryPanel() {
+      if (localStorage.getItem('frigo_history_open') === '1') {
+        document.getElementById('history-panel').classList.remove('hidden');
+        document.getElementById('history-chevron').style.transform = 'rotate(180deg)';
+      }
+    }
+
+    function clearHistory() {
+      history = [];
+      save();
+      renderHistory();
+    }
+
+    const DETECTED_MOCK = [
+      { name: 'Œufs', expiry: daysFromNow(8) },
+      { name: 'Tomates', expiry: daysFromNow(2) },
+      { name: 'Fromage', expiry: daysFromNow(12) },
+      { name: 'Lait', expiry: daysFromNow(1) },
+      { name: 'Poivrons', expiry: daysFromNow(6) },
+      { name: 'Carottes', expiry: daysFromNow(14) },
+    ];
+
+    const RECIPE_POOL = [
+      {
+        name: 'Frittata aux tomates', time: '15 min', kcal: '420 kcal', ingredients: ['Œufs','Tomates','Fromage'],
+        fullIngredients: ['4 œufs', '2 tomates', '50 g de fromage râpé', '1 c. à soupe d\'huile d\'olive', 'Sel, poivre'],
+        steps: [
+          'Préchauffez le four à 180°C.',
+          'Battez les œufs dans un bol, salez et poivrez.',
+          'Coupez les tomates en rondelles.',
+          'Faites chauffer l\'huile dans une poêle allant au four, versez les œufs.',
+          'Disposez les rondelles de tomates sur les œufs, parsemez de fromage.',
+          'Faites cuire 5 min sur feu moyen puis 5 min au four jusqu\'à ce que la surface soit dorée.',
+        ]
+      },
+      {
+        name: 'Salade grecque', time: '8 min', kcal: '280 kcal', ingredients: ['Tomates','Fromage'],
+        fullIngredients: ['3 tomates', '100 g de feta (ou fromage)', '½ concombre', '1 c. à soupe d\'huile d\'olive', 'Origan, sel'],
+        steps: [
+          'Coupez les tomates et le concombre en morceaux.',
+          'Émiettez le fromage par-dessus.',
+          'Arrosez d\'huile d\'olive.',
+          'Saupoudrez d\'origan et d\'une pincée de sel.',
+          'Mélangez délicatement et servez frais.',
+        ]
+      },
+      {
+        name: 'Omelette fromage', time: '10 min', kcal: '380 kcal', ingredients: ['Œufs','Fromage'],
+        fullIngredients: ['3 œufs', '40 g de fromage râpé', '1 noix de beurre', 'Sel, poivre'],
+        steps: [
+          'Battez les œufs avec sel et poivre.',
+          'Faites fondre le beurre dans une poêle à feu moyen.',
+          'Versez les œufs et laissez cuire 2 min sans mélanger.',
+          'Parsemez le fromage sur une moitié de l\'omelette.',
+          'Pliez l\'omelette en deux et servez aussitôt.',
+        ]
+      },
+      {
+        name: 'Soupe de carottes', time: '25 min', kcal: '190 kcal', ingredients: ['Carottes'],
+        fullIngredients: ['4 carottes', '1 oignon', '50 cl de bouillon de légumes', '1 c. à café de cumin', 'Sel, poivre, crème (optionnel)'],
+        steps: [
+          'Épluchez et coupez les carottes en rondelles, émincez l\'oignon.',
+          'Faites revenir l\'oignon dans un peu d\'huile 2 min.',
+          'Ajoutez les carottes et le bouillon, portez à ébullition.',
+          'Laissez mijoter 15 min jusqu\'à ce que les carottes soient tendres.',
+          'Mixez jusqu\'à obtenir une texture lisse.',
+          'Ajoutez le cumin, rectifiez l\'assaisonnement. Servez avec un filet de crème si désiré.',
+        ]
+      },
+      {
+        name: 'Poivrons farcis aux œufs', time: '30 min', kcal: '460 kcal', ingredients: ['Poivrons','Œufs'],
+        fullIngredients: ['2 poivrons', '4 œufs', '50 g de fromage râpé', 'Sel, poivre, herbes'],
+        steps: [
+          'Préchauffez le four à 200°C.',
+          'Coupez les poivrons en deux dans la longueur, retirez les graines.',
+          'Posez-les dans un plat allant au four, face creuse vers le haut.',
+          'Cassez un œuf dans chaque demi-poivron.',
+          'Parsemez de fromage, salez et poivrez.',
+          'Enfournez 20 min jusqu\'à ce que les œufs soient cuits et le fromage doré.',
+        ]
+      },
+      {
+        name: 'Crêpes maison', time: '20 min', kcal: '310 kcal', ingredients: ['Lait','Œufs'],
+        fullIngredients: ['200 g de farine', '2 œufs', '500 ml de lait', '1 pincée de sel', '1 c. à soupe de beurre fondu'],
+        steps: [
+          'Mettez la farine et le sel dans un saladier, faites un puits.',
+          'Ajoutez les œufs et mélangez au centre.',
+          'Incorporez le lait progressivement en fouettant pour éviter les grumeaux.',
+          'Ajoutez le beurre fondu, mélangez. Laissez reposer 10 min.',
+          'Faites chauffer une poêle légèrement beurrée à feu moyen.',
+          'Versez une louche de pâte, cuisez 1 min par face. Répétez.',
+        ]
+      },
+      {
+        name: 'Ratatouille express', time: '30 min', kcal: '350 kcal', ingredients: ['Tomates','Poivrons'],
+        fullIngredients: ['2 tomates', '2 poivrons', '1 oignon', '2 gousses d\'ail', '3 c. à soupe d\'huile d\'olive', 'Thym, sel, poivre'],
+        steps: [
+          'Coupez tous les légumes en dés réguliers.',
+          'Faites revenir l\'oignon et l\'ail dans l\'huile 3 min.',
+          'Ajoutez les poivrons, cuisez 5 min à feu moyen.',
+          'Incorporez les tomates, le thym, sel et poivre.',
+          'Couvrez et laissez mijoter 20 min en remuant de temps en temps.',
+          'Servez chaud en accompagnement ou sur du riz.',
+        ]
+      },
+      {
+        name: 'Gratin de légumes', time: '40 min', kcal: '520 kcal', ingredients: ['Carottes','Fromage'],
+        fullIngredients: ['4 carottes', '100 g de fromage râpé', '20 cl de crème liquide', '1 gousse d\'ail', 'Sel, poivre, noix de muscade'],
+        steps: [
+          'Préchauffez le four à 190°C. Frottez un plat à gratin avec l\'ail.',
+          'Épluchez et coupez les carottes en fines rondelles.',
+          'Disposez-les en couches dans le plat.',
+          'Mélangez la crème avec sel, poivre et muscade, versez sur les carottes.',
+          'Recouvrez de fromage râpé.',
+          'Enfournez 35 min jusqu\'à ce que le dessus soit bien doré.',
+        ]
+      },
+    ];
+
+    // ── Helpers ──
+    function daysFromNow(n) {
+      const d = new Date();
+      d.setDate(d.getDate() + n);
+      return d.toISOString().split('T')[0];
+    }
+
+    function daysUntil(dateStr) {
+      if (!dateStr) return null;
+      const diff = new Date(dateStr) - new Date();
+      return Math.ceil(diff / 86400000);
+    }
+
+    function freshTag(days) {
+      if (days === null) return { cls: 'tag-none', label: '—' };
+      if (days <= 0)  return { cls: 'tag-expire', label: 'Périmé !' };
+      if (days === 1) return { cls: 'tag-expire', label: 'Demain' };
+      if (days <= 3)  return { cls: 'tag-ok',     label: `${days} j` };
+      return { cls: 'tag-fresh', label: `${days} j` };
+    }
+
+    function formatDate(str) {
+      if (!str) return '';
+      return new Date(str).toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
+    }
+
+    // ── Render session active ──
+    function renderSession() {
+      const session    = activeSession();
+      const foods      = session ? session.foods : [];
+      const list       = document.getElementById('food-list');
+      const alertsSec  = document.getElementById('alerts-section');
+      const alertsList = document.getElementById('alerts-list');
+      const recipesSec = document.getElementById('recipes-section');
+
+      list.innerHTML = '';
+
+      // Alertes
+      const expiring = foods.filter(f => { const d = daysUntil(f.expiry); return d !== null && d <= 2; });
+      alertsSec.classList.toggle('hidden', expiring.length === 0);
+      alertsList.innerHTML = expiring.map(f => {
+        const d = daysUntil(f.expiry);
+        const label = d <= 0 ? 'Périmé' : d === 1 ? 'Demain' : `${d} j`;
+        return `<span class="text-xs px-2.5 py-1 tag-expire rounded-full font-medium">${f.name} — ${label}</span>`;
+      }).join('');
+
+      // Liste aliments
+      if (foods.length === 0) {
+        list.innerHTML = `<p class="text-center py-6 text-brand-muted text-sm font-light">Aucun aliment dans cette session.</p>`;
+      } else {
+        foods.forEach(f => {
+          const days = daysUntil(f.expiry);
+          const tag  = freshTag(days);
+          const el   = document.createElement('div');
+          el.className = 'px-5 py-3 flex items-center gap-3 food-item hover:bg-stone-50/60 transition-colors';
+          el.innerHTML = `
+            <span class="text-2xl w-8 text-center flex-shrink-0">${f.emoji || '🥦'}</span>
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-brand-text text-sm">${f.name}</p>
+              ${f.expiry ? `<p class="text-xs text-brand-muted font-light mt-0.5">Péremption : ${formatDate(f.expiry)}</p>` : '<p class="text-xs text-stone-300 font-light mt-0.5">Pas de date</p>'}
+            </div>
+            <span class="text-xs px-2.5 py-1 rounded-full font-medium ${tag.cls} flex-shrink-0">${tag.label}</span>
+            <button onclick="removeFood(${f.id})" class="delete-btn w-6 h-6 rounded-lg bg-stone-100 flex items-center justify-center cursor-pointer hover:bg-red-100 hover:text-brand-red transition-colors flex-shrink-0">
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>`;
+          list.appendChild(el);
+        });
+      }
+
+      recipesSec.classList.toggle('hidden', foods.length === 0);
+      if (foods.length > 0) generateRecipes();
+    }
+
+    function render() { renderTabs(); renderSession(); updateFridgeWidget(); }
+
+    function removeFood(id) {
+      const s = activeSession();
+      if (!s) return;
+      s.foods = s.foods.filter(f => f.id !== id);
+      save();
+      render();
+    }
+
+    // ── Recettes ──
+    let aiRecipes = [];
+
+    function generateRecipes() {
+      const list = document.getElementById('recipes-list');
+      if (aiRecipes.length > 0) {
+        renderRecipeList(aiRecipes);
+      } else {
+        list.innerHTML = `<p class="text-center py-5 text-brand-muted text-sm font-light">Appuie sur "Générer avec l'IA" pour obtenir des recettes basées sur ton frigo.</p>`;
+      }
+    }
+
+    async function fetchAIRecipes() {
+      const s = activeSession();
+      if (!s || s.foods.length === 0) return;
+      const btn = document.getElementById('ai-recipes-btn');
+      btn.innerHTML = `<svg class="w-3 h-3 spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Génération…`;
+      btn.disabled = true;
+
+      try {
+        const res  = await fetch('/recipes', {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ foods: s.foods.map(f => f.name), seed: Math.floor(Math.random() * 100000) }),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        aiRecipes = data.recipes;
+        renderRecipeList(aiRecipes);
+      } catch (err) {
+        alert('Erreur : ' + err.message);
+      } finally {
+        btn.innerHTML = `<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg> Régénérer`;
+        btn.disabled = false;
+      }
+    }
+
+    function renderRecipeList(recipes) {
+      document.getElementById('recipes-list').innerHTML = recipes.map((r, i) => `
+        <div onclick="openRecipe(${i})" class="py-3 flex items-center gap-3 cursor-pointer hover:bg-stone-50/60 transition-colors group">
+          <canvas id="thumb-canvas-${i}" width="56" height="56" class="rounded-xl flex-shrink-0" style="width:56px;height:56px"></canvas>
+          <div class="flex-1 min-w-0">
+            <p class="font-medium text-brand-text text-sm group-hover:text-brand-red transition-colors">${r.name}</p>
+            <p class="text-xs text-brand-muted font-light mt-0.5">${r.time} · ${r.nutrition?.calories ?? '?'} kcal · ${r.difficulty}</p>
+          </div>
+          <svg class="w-4 h-4 text-stone-300 group-hover:text-brand-red transition-colors flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>`).join('');
+      recipes.forEach((r, i) => drawRecipeCanvas(`thumb-canvas-${i}`, r.name, r.emoji, 56, 56));
+    }
+
+    async function loadPollinationsImage(name, emoji, ingredients) {
+      const imgEl  = document.getElementById('recipe-modal-img');
+      const loader = document.getElementById('recipe-img-loader');
+      const status = document.getElementById('recipe-img-status');
+      const canvas = document.getElementById('recipe-modal-canvas');
+      if (!imgEl) return;
+
+      imgEl.style.opacity = '0';
+      imgEl.src = '';
+      canvas.style.opacity = '1';
+      if (loader) loader.classList.remove('hidden');
+
+      const ingredientList = (ingredients || []).slice(0, 5).join(', ');
+
+      function applyImage(src) {
+        const newImg = new Image();
+        newImg.onload = () => {
+          imgEl.src = src;
+          imgEl.style.opacity = '1';
+          if (loader) loader.classList.add('hidden');
+          setTimeout(() => { if (canvas) canvas.style.opacity = '0'; }, 800);
+        };
+        newImg.onerror = () => {
+          if (loader) loader.classList.add('hidden');
+        };
+        newImg.src = src;
+      }
+
+      // ── Étape 1 : essayer gpt-image-1 via le serveur ──
+      try {
+        if (status) status.textContent = 'Génération IA haute qualité…';
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 60000);
+        const res  = await fetch('/generate-image', {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ recipeName: name, ingredients: ingredientList }),
+          signal: ctrl.signal,
+        });
+        clearTimeout(timer);
+        const data = await res.json();
+        if (data.b64) {
+          applyImage('data:image/png;base64,' + data.b64);
+          return;
+        }
+        throw new Error(data.error || 'no b64');
+      } catch (e) {
+        console.warn('gpt-image-1 failed:', e.message, '— fallback Pollinations');
+      }
+
+      // ── Étape 2 : Pollinations.ai (Flux, gratuit, sans clé) ──
+      if (status) status.textContent = 'Génération via Flux AI…';
+      const prompt = `ultra realistic professional food photo of ${name}, ${ingredientList}, plated on white ceramic plate, soft warm studio lighting, shallow depth of field, photorealistic 8K, appetizing, no text`;
+      const seed   = [...name].reduce((a, c) => a + c.charCodeAt(0), 0);
+      const url    = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=768&height=512&nologo=true&seed=${seed}`;
+      applyImage(url);
+    }
+
+    function drawRecipeCanvas(canvasId, name, emoji, w, h) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      canvas.width  = w * window.devicePixelRatio;
+      canvas.height = h * window.devicePixelRatio;
+      canvas.style.width  = w + 'px';
+      canvas.style.height = h + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      // Unique hue from recipe name
+      const hue  = [...(name || '')].reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
+      const hue2 = (hue + 45) % 360;
+      const hue3 = (hue + 90) % 360;
+
+      // Dark gradient background
+      const bg = ctx.createLinearGradient(0, 0, w, h);
+      bg.addColorStop(0,   `hsl(${hue},  65%, 14%)`);
+      bg.addColorStop(0.5, `hsl(${hue2}, 55%, 18%)`);
+      bg.addColorStop(1,   `hsl(${hue3}, 60%, 12%)`);
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+
+      // Radial glow
+      const glow = ctx.createRadialGradient(w * 0.5, h * 0.4, 0, w * 0.5, h * 0.4, Math.max(w, h) * 0.65);
+      glow.addColorStop(0, `hsla(${hue2}, 70%, 55%, 0.35)`);
+      glow.addColorStop(1, 'transparent');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, w, h);
+
+      // Emoji centré
+      const fontSize = Math.min(w, h) * 0.52;
+      ctx.font = `${fontSize}px serif`;
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(emoji || '🍽️', w / 2, h / 2);
+    }
+
+    function openRecipe(idx) {
+      const r = aiRecipes[idx];
+      if (!r) return;
+      const n = r.nutrition || {};
+
+      document.getElementById('recipe-modal').dataset.recipeIdx = idx;
+
+      // Canvas placeholder immédiat + vraie image IA en fond
+      const wrap = document.getElementById('recipe-modal-img-wrap');
+      const cw   = wrap.offsetWidth || 448;
+      if (document.getElementById('recipe-modal-canvas'))
+        document.getElementById('recipe-modal-canvas').style.opacity = '1';
+      drawRecipeCanvas('recipe-modal-canvas', r.name, r.emoji, cw, 224);
+      loadPollinationsImage(r.name, r.emoji, r.ingredients);
+
+      document.getElementById('recipe-emoji').textContent  = r.emoji || '🍳';
+      document.getElementById('recipe-title').textContent  = r.name;
+      document.getElementById('recipe-meta').textContent   = `${r.time} · ${r.difficulty} · ${r.servings} portion${r.servings > 1 ? 's' : ''}`;
+
+      // Nutrition
+      document.getElementById('recipe-nutrition').innerHTML = `
+        <div class="grid grid-cols-4 gap-2 mb-2">
+          <div class="rounded-xl bg-red-50 p-3 text-center">
+            <p class="font-bold text-brand-red text-lg">${n.calories ?? '—'}</p>
+            <p class="text-[10px] text-brand-muted mt-0.5">kcal</p>
+          </div>
+          <div class="rounded-xl bg-blue-50 p-3 text-center">
+            <p class="font-bold text-blue-600 text-lg">${n.proteins ?? '—'}g</p>
+            <p class="text-[10px] text-brand-muted mt-0.5">Protéines</p>
+          </div>
+          <div class="rounded-xl bg-amber-50 p-3 text-center">
+            <p class="font-bold text-amber-600 text-lg">${n.carbs ?? '—'}g</p>
+            <p class="text-[10px] text-brand-muted mt-0.5">Glucides</p>
+          </div>
+          <div class="rounded-xl bg-green-50 p-3 text-center">
+            <p class="font-bold text-green-600 text-lg">${n.fats ?? '—'}g</p>
+            <p class="text-[10px] text-brand-muted mt-0.5">Lipides</p>
+          </div>
+        </div>
+        ${n.fiber ? `<p class="text-xs text-brand-muted font-light text-center">Fibres : ${n.fiber}g · par portion</p>` : ''}`;
+
+      document.getElementById('recipe-ingredients').innerHTML = (r.ingredients || [])
+        .map(i => `<li class="flex items-start gap-2"><span class="w-1.5 h-1.5 rounded-full bg-brand-red mt-1.5 flex-shrink-0"></span>${i}</li>`)
+        .join('');
+      document.getElementById('recipe-steps').innerHTML = (r.steps || [])
+        .map((s, i) => `
+          <li class="flex items-start gap-3">
+            <span class="w-6 h-6 rounded-full bg-brand-red text-white text-xs font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">${i+1}</span>
+            <span class="text-sm text-brand-text font-light leading-relaxed">${s}</span>
+          </li>`).join('');
+      document.getElementById('recipe-modal').classList.add('open');
+    }
+
+    // ── Modals ──
+    function openPhotoModal() {
+      showStep('photo', 1);
+      document.getElementById('photo-modal').classList.add('open');
+    }
+
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    document.querySelectorAll('.modal-bg').forEach(m => {
+      m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') document.querySelectorAll('.modal-bg.open').forEach(m => m.classList.remove('open'));
+    });
+
+    function showStep(modal, n) {
+      [1,2,3].forEach(i => {
+        const el = document.getElementById(`${modal}-step-${i}`);
+        if (el) el.classList.toggle('hidden', i !== n);
+      });
+      const animEl = document.getElementById(`${modal}-step-anim`);
+      if (animEl) animEl.classList.add('hidden');
+    }
+
+    // ── Photo flow ──
+    let pendingImageData = null;
+
+    function handlePhotoUpload(input) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      const img  = new Image();
+      const url  = URL.createObjectURL(file);
+
+      img.onload = () => {
+        // Redimensionne à max 1024px
+        const MAX = 1024;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+          else                { width  = Math.round(width  * MAX / height); height = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        URL.revokeObjectURL(url);
+        pendingImageData = { base64: dataUrl.split(',')[1], mediaType: 'image/jpeg' };
+        simulatePhotoScan();
+      };
+      img.src = url;
+    }
+
+    async function simulatePhotoScan() {
+      showStep('photo', 2);
+      document.getElementById('scan-status').textContent = 'Analyse en cours…';
+
+      try {
+        let items;
+
+        if (pendingImageData) {
+          const res  = await fetch('/analyze', {
+            method: 'POST',
+            headers: apiHeaders(),
+            body: JSON.stringify(pendingImageData),
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error);
+          items = data.items;
+        } else {
+          // Pas de photo uploadée → données de démo
+          items = DETECTED_MOCK.map(d => ({ name: d.name, emoji: getEmoji(d.name) }));
+        }
+
+        playFridgeAnimation(items, () => autoAddItems(items));
+
+      } catch (err) {
+        showStep('photo', 1);
+        alert('Erreur : ' + err.message);
+      }
+    }
+
+    function renderDetectedStep3(items) {
+      showStep('photo', 3);
+      document.getElementById('detected-count').textContent = `${items.length} aliment${items.length > 1 ? 's' : ''} détecté${items.length > 1 ? 's' : ''}`;
+      const container = document.getElementById('detected-items');
+      container.innerHTML = items.map((item, i) => `
+        <div class="flex items-center gap-2">
+          <span class="text-xl flex-shrink-0">${item.emoji}</span>
+          <input type="text" value="${item.name}" id="det-name-${i}"
+            class="flex-1 px-3 py-2 rounded-lg text-sm"
+            style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#EDE9E3;" />
+          <input type="date" id="det-date-${i}"
+            class="px-3 py-2 rounded-lg text-xs w-32"
+            style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#6E6A65;" />
+        </div>`).join('');
+      window._detectedCount = items.length;
+    }
+
+    function playFridgeAnimation(items, onComplete) {
+      // Close photo modal, show full-screen overlay
+      document.getElementById('photo-modal').classList.remove('open');
+
+      const overlay  = document.getElementById('fridge-overlay');
+      const door     = document.getElementById('fov-door');
+      const insideEl = document.getElementById('fov-inside-items');
+      const counter  = document.getElementById('fov-counter');
+      const title    = document.getElementById('fov-title');
+      const scene    = document.getElementById('fov-scene');
+
+      // Reset
+      insideEl.innerHTML = '';
+      overlay.querySelectorAll('.fly-food').forEach(e => e.remove());
+      counter.textContent = '';
+      title.textContent = 'Ouverture du frigo…';
+      door.classList.remove('open');
+
+      overlay.style.opacity = '0';
+      overlay.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        overlay.style.transition = 'opacity 0.3s ease';
+        overlay.style.opacity = '1';
+      });
+
+      const total = items.length;
+
+      // ── Phase 1 : Open door ──
+      setTimeout(() => {
+        door.classList.add('open');
+      }, 500);
+
+      // ── Phase 2 : Fly items in ──
+      setTimeout(() => {
+        title.textContent = 'Rangement en cours…';
+        counter.textContent = `0 / ${total}`;
+
+        const sceneR  = scene.getBoundingClientRect();
+        const insideR = insideEl.getBoundingClientRect();
+        const cx      = sceneR.left + sceneR.width  / 2;
+        const cy      = sceneR.top  + sceneR.height / 2;
+        let done = 0;
+
+        function flyNext(idx) {
+          if (idx >= items.length) {
+            // ── Phase 3 : Close door ──
+            title.textContent = `✓ ${total} aliment${total > 1 ? 's' : ''} rangé${total > 1 ? 's' : ''} !`;
+            setTimeout(() => door.classList.remove('open'), 400);
+            // ── Fade out & complete ──
+            setTimeout(() => {
+              overlay.style.transition = 'opacity 0.5s ease';
+              overlay.style.opacity = '0';
+              setTimeout(() => {
+                overlay.classList.add('hidden');
+                onComplete();
+              }, 500);
+            }, 1500);
+            return;
+          }
+
+          const item = items[idx];
+
+          // Spawn position: semicircle above/around fridge
+          const angle  = (-155 + (idx / Math.max(total - 1, 1)) * 130) * Math.PI / 180;
+          const radius = 160 + Math.random() * 60;
+          const sx = cx + Math.cos(angle) * radius - 11;
+          const sy = cy + Math.sin(angle) * radius - 11;
+
+          const el = document.createElement('div');
+          el.className = 'fly-food';
+          el.textContent = item.emoji || '🥦';
+          el.style.cssText = `position:fixed;left:${sx}px;top:${sy}px;font-size:20px;z-index:1000;pointer-events:none;opacity:0;transform:scale(0) rotate(-25deg);transition:none;`;
+          overlay.appendChild(el);
+
+          // Pop in
+          requestAnimationFrame(() => setTimeout(() => {
+            el.style.transition = 'transform 0.22s cubic-bezier(.34,1.56,.64,1), opacity 0.15s';
+            el.style.opacity = '1';
+            el.style.transform = 'scale(1) rotate(0deg)';
+          }, 10));
+
+          // Fly into fridge after 300ms
+          setTimeout(() => {
+            const tx = insideR.left + 4 + Math.random() * Math.max(0, insideR.width  - 26);
+            const ty = insideR.top  + 2 + Math.random() * Math.max(0, insideR.height - 22);
+            const dx = tx - sx;
+            const dy = ty - sy;
+            el.style.transition = 'transform 0.42s cubic-bezier(.55,.02,.86,.5), opacity 0.18s 0.28s';
+            el.style.transform  = `translate(${dx}px,${dy}px) scale(0.2)`;
+            el.style.opacity    = '0';
+
+            // Land inside fridge
+            setTimeout(() => {
+              el.remove();
+              const s = document.createElement('span');
+              s.textContent = item.emoji || '🥦';
+              s.style.animation = 'emojiPop 0.2s cubic-bezier(.34,1.56,.64,1) both';
+              insideEl.appendChild(s);
+              done++;
+              counter.textContent = `${done} / ${total}`;
+            }, 390);
+          }, 300);
+
+          setTimeout(() => flyNext(idx + 1), 155);
+        }
+
+        flyNext(0);
+      }, 1450); // 500ms delay + 850ms door open + 100ms buffer
+    }
+
+    // ── Fridge Widget ──
+    let _widgetOpen = false;
+
+    function updateFridgeWidget() {
+      const allItems = sessions.flatMap(s => s.foods);
+      const widget   = document.getElementById('fridge-widget');
+      const inside   = document.getElementById('widget-inside');
+      const label    = document.getElementById('widget-label');
+
+      if (allItems.length === 0) { widget.classList.add('hidden'); return; }
+      widget.classList.remove('hidden');
+      inside.innerHTML = allItems.slice(0, 24).map(f => `<span>${f.emoji || '🥦'}</span>`).join('');
+      label.textContent = _widgetOpen
+        ? `${allItems.length} aliment${allItems.length > 1 ? 's' : ''} à l'intérieur`
+        : 'Survoler pour regarder à l\'intérieur';
+    }
+
+    function peekFridge(open) {
+      if (_widgetOpen) return;
+      const door = document.getElementById('widget-door');
+      door.style.transform = open
+        ? 'perspective(400px) rotateY(-28deg)'
+        : 'perspective(400px) rotateY(0deg)';
+    }
+
+    function toggleFridgeWidget() {
+      _widgetOpen = !_widgetOpen;
+      const door   = document.getElementById('widget-door');
+      const arrow  = document.getElementById('widget-arrow');
+      const label  = document.getElementById('widget-label');
+      const allItems = sessions.flatMap(s => s.foods);
+      door.style.transform = _widgetOpen
+        ? 'perspective(400px) rotateY(-72deg)'
+        : 'perspective(400px) rotateY(0deg)';
+      arrow.style.transform = _widgetOpen ? 'rotate(180deg)' : '';
+      label.textContent = _widgetOpen
+        ? `${allItems.length} aliment${allItems.length > 1 ? 's' : ''} à l'intérieur`
+        : 'Survoler pour regarder à l\'intérieur';
+    }
+
+    const FOOD_EMOJIS = { 'œuf': '🥚', 'tomat': '🍅', 'fromag': '🧀', 'lait': '🥛', 'poivron': '🫑', 'carot': '🥕', 'salad': '🥬', 'oignon': '🧅', 'poulet': '🍗', 'bœuf': '🥩', 'porc': '🥩', 'pomme': '🍎', 'banane': '🍌', 'citron': '🍋', 'orange': '🍊', 'fraise': '🍓', 'beurre': '🧈', 'yaourt': '🥛', 'crème': '🥛', 'pain': '🍞', 'pâtes': '🍝', 'riz': '🍚' };
+
+    function getEmoji(name) {
+      const lower = name.toLowerCase();
+      for (const [key, emoji] of Object.entries(FOOD_EMOJIS)) {
+        if (lower.includes(key)) return emoji;
+      }
+      return '🥦';
+    }
+
+    function autoAddItems(detectedItems) {
+      if (!detectedItems || detectedItems.length === 0) return;
+      const newFoods = detectedItems.map(item => ({
+        id:     nextId++,
+        name:   item.name,
+        emoji:  item.emoji || getEmoji(item.name),
+        expiry: null
+      }));
+      const now   = new Date();
+      const label = `Scan du ${now.toLocaleDateString('fr-FR', { day:'numeric', month:'long' })}`;
+      const sid   = nextSessionId++;
+      sessions.push({ id: sid, label: now.toLocaleDateString('fr-FR', { day:'numeric', month:'short' }), type: 'scan', date: now.toISOString(), foods: newFoods });
+      activeId = sid;
+      addFridgeSnapshot(newFoods, label);
+      incrementScanCount();
+      save();
+      render();
+    }
+
+    function confirmPhotoScan() {
+      const newFoods = [];
+      const count = window._detectedCount || 0;
+      for (let i = 0; i < count; i++) {
+        const name   = document.getElementById(`det-name-${i}`)?.value?.trim();
+        const expiry = document.getElementById(`det-date-${i}`)?.value || null;
+        const emoji  = document.querySelector(`#detected-items > div:nth-child(${i+1}) span`)?.textContent || getEmoji(name);
+        if (name) newFoods.push({ id: nextId++, name, expiry, emoji });
+      }
+      if (newFoods.length === 0) return;
+      const now   = new Date();
+      const label = `Scan du ${now.toLocaleDateString('fr-FR', { day:'numeric', month:'long' })}`;
+      const sid   = nextSessionId++;
+      sessions.push({ id: sid, label: now.toLocaleDateString('fr-FR', { day:'numeric', month:'short' }), type: 'scan', date: now.toISOString(), foods: newFoods });
+      activeId = sid;
+      addFridgeSnapshot(newFoods, label);
+      incrementScanCount();
+      save();
+      closeModal('photo-modal');
+      render();
+    }
+
+    // ── Catalogue ──
+    const CATEGORIES = [
+      {
+        name: 'Légumes', emoji: '🥦', color: 'bg-green-50 border-green-100',
+        items: [
+          { name: 'Tomates', emoji: '🍅' }, { name: 'Carottes', emoji: '🥕' },
+          { name: 'Poivrons', emoji: '🫑' }, { name: 'Salade', emoji: '🥬' },
+          { name: 'Oignons', emoji: '🧅' }, { name: 'Courgettes', emoji: '🥒' },
+          { name: 'Aubergines', emoji: '🍆' }, { name: 'Brocoli', emoji: '🥦' },
+          { name: 'Épinards', emoji: '🌿' }, { name: 'Champignons', emoji: '🍄' },
+          { name: 'Concombre', emoji: '🥒' }, { name: 'Maïs', emoji: '🌽' },
+          { name: 'Patate douce', emoji: '🍠' }, { name: 'Pommes de terre', emoji: '🥔' },
+          { name: 'Poireaux', emoji: '🌿' }, { name: 'Haricots verts', emoji: '🫘' },
+        ]
+      },
+      {
+        name: 'Fruits', emoji: '🍎', color: 'bg-red-50 border-red-100',
+        items: [
+          { name: 'Pommes', emoji: '🍎' }, { name: 'Bananes', emoji: '🍌' },
+          { name: 'Oranges', emoji: '🍊' }, { name: 'Citrons', emoji: '🍋' },
+          { name: 'Fraises', emoji: '🍓' }, { name: 'Raisins', emoji: '🍇' },
+          { name: 'Pêches', emoji: '🍑' }, { name: 'Poires', emoji: '🍐' },
+          { name: 'Mangue', emoji: '🥭' }, { name: 'Ananas', emoji: '🍍' },
+          { name: 'Cerises', emoji: '🍒' }, { name: 'Myrtilles', emoji: '🫐' },
+          { name: 'Kiwi', emoji: '🥝' }, { name: 'Pastèque', emoji: '🍉' },
+        ]
+      },
+      {
+        name: 'Laitiers', emoji: '🥛', color: 'bg-blue-50 border-blue-100',
+        items: [
+          { name: 'Lait', emoji: '🥛' }, { name: 'Beurre', emoji: '🧈' },
+          { name: 'Yaourt nature', emoji: '🥛' }, { name: 'Yaourt fruité', emoji: '🍓' },
+          { name: 'Crème fraîche', emoji: '🥛' }, { name: 'Fromage râpé', emoji: '🧀' },
+          { name: 'Camembert', emoji: '🧀' }, { name: 'Emmental', emoji: '🧀' },
+          { name: 'Mozzarella', emoji: '🧀' }, { name: 'Parmesan', emoji: '🧀' },
+          { name: 'Feta', emoji: '🧀' }, { name: 'Chèvre', emoji: '🧀' },
+        ]
+      },
+      {
+        name: 'Viandes', emoji: '🥩', color: 'bg-rose-50 border-rose-100',
+        items: [
+          { name: 'Poulet', emoji: '🍗' }, { name: 'Bœuf haché', emoji: '🥩' },
+          { name: 'Steak', emoji: '🥩' }, { name: 'Porc', emoji: '🥩' },
+          { name: 'Lardons', emoji: '🥓' }, { name: 'Jambon', emoji: '🍖' },
+          { name: 'Dinde', emoji: '🍗' }, { name: 'Saucisses', emoji: '🌭' },
+          { name: 'Merguez', emoji: '🌭' }, { name: 'Agneau', emoji: '🥩' },
+        ]
+      },
+      {
+        name: 'Poissons', emoji: '🐟', color: 'bg-sky-50 border-sky-100',
+        items: [
+          { name: 'Saumon', emoji: '🐟' }, { name: 'Thon', emoji: '🐠' },
+          { name: 'Cabillaud', emoji: '🐟' }, { name: 'Crevettes', emoji: '🦐' },
+          { name: 'Sardines', emoji: '🐟' }, { name: 'Maquereaux', emoji: '🐠' },
+          { name: 'Dorade', emoji: '🐟' }, { name: 'Moules', emoji: '🦪' },
+        ]
+      },
+      {
+        name: 'Œufs & autres', emoji: '🥚', color: 'bg-amber-50 border-amber-100',
+        items: [
+          { name: 'Œufs', emoji: '🥚' }, { name: 'Jus d\'orange', emoji: '🍊' },
+          { name: 'Jus de pomme', emoji: '🍎' }, { name: 'Eau gazeuse', emoji: '💧' },
+          { name: 'Mayonnaise', emoji: '🫙' }, { name: 'Ketchup', emoji: '🍅' },
+          { name: 'Moutarde', emoji: '🫙' }, { name: 'Confiture', emoji: '🍓' },
+          { name: 'Nutella', emoji: '🍫' }, { name: 'Cornichons', emoji: '🥒' },
+        ]
+      },
+    ];
+
+    let selectedFood = null;
+
+    function openManualModal() {
+      selectedFood = null;
+      document.getElementById('manual-date').value = '';
+      document.getElementById('date-footer').classList.add('hidden');
+      document.getElementById('search-bar').classList.add('hidden');
+      document.getElementById('cat-view').classList.remove('hidden');
+      document.getElementById('food-view').classList.add('hidden');
+      document.getElementById('back-btn').classList.add('hidden');
+      document.getElementById('manual-title').textContent = 'Ajouter un aliment';
+      renderCategories();
+      document.getElementById('manual-modal').classList.add('open');
+    }
+
+    function renderCategories() {
+      document.getElementById('cat-view').innerHTML = CATEGORIES.map(c => `
+        <button onclick="openCategory('${c.name}')"
+          class="flex items-center gap-3 p-4 rounded-2xl border ${c.color} hover:shadow-sm transition-all cursor-pointer text-left group">
+          <span class="text-3xl">${c.emoji}</span>
+          <span class="font-medium text-brand-text text-sm group-hover:text-brand-red transition-colors">${c.name}</span>
+        </button>`).join('');
+    }
+
+    function openCategory(catName) {
+      const cat = CATEGORIES.find(c => c.name === catName);
+      document.getElementById('manual-title').textContent = cat.name;
+      document.getElementById('back-btn').classList.remove('hidden');
+      document.getElementById('search-bar').classList.remove('hidden');
+      document.getElementById('food-search').value = '';
+      document.getElementById('cat-view').classList.add('hidden');
+      document.getElementById('food-view').classList.remove('hidden');
+      renderFoods(cat.items);
+    }
+
+    function backToCategories() {
+      selectedFood = null;
+      document.getElementById('date-footer').classList.add('hidden');
+      document.getElementById('search-bar').classList.add('hidden');
+      document.getElementById('back-btn').classList.add('hidden');
+      document.getElementById('manual-title').textContent = 'Ajouter un aliment';
+      document.getElementById('cat-view').classList.remove('hidden');
+      document.getElementById('food-view').classList.add('hidden');
+    }
+
+    function renderFoods(items) {
+      const grid = document.getElementById('food-grid');
+      const noRes = document.getElementById('no-results');
+      if (items.length === 0) {
+        grid.innerHTML = '';
+        noRes.classList.remove('hidden');
+        return;
+      }
+      noRes.classList.add('hidden');
+      grid.innerHTML = items.map(item => `
+        <button onclick="selectFood('${item.name}', '${item.emoji}')"
+          class="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-stone-100 bg-white hover:border-red-200 hover:bg-red-50/30 hover:shadow-sm transition-all cursor-pointer group">
+          <span class="text-3xl">${item.emoji}</span>
+          <span class="text-xs text-brand-muted font-medium group-hover:text-brand-red transition-colors text-center leading-tight">${item.name}</span>
+        </button>`).join('');
+    }
+
+    function filterFoods(query) {
+      const title = document.getElementById('manual-title').textContent;
+      const cat = CATEGORIES.find(c => c.name === title);
+      if (!cat) return;
+      const filtered = cat.items.filter(i => i.name.toLowerCase().includes(query.toLowerCase()));
+      renderFoods(filtered);
+    }
+
+    function selectFood(name, emoji) {
+      selectedFood = { name, emoji };
+      document.getElementById('selected-emoji').textContent = emoji;
+      document.getElementById('selected-name').textContent = name;
+      document.getElementById('date-footer').classList.remove('hidden');
+      document.getElementById('manual-date').focus();
+    }
+
+    function confirmManualAdd() {
+      if (!selectedFood) return;
+      const expiry = document.getElementById('manual-date').value || null;
+      const food   = { id: nextId++, name: selectedFood.name, expiry, emoji: selectedFood.emoji };
+
+      let s = activeSession();
+      if (!s) {
+        // Crée une session manuelle si aucune n'existe
+        const now   = new Date();
+        const label = now.toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
+        const sid   = nextSessionId++;
+        s = { id: sid, label, type: 'manual', date: now.toISOString(), foods: [] };
+        sessions.push(s);
+        activeId = sid;
+      }
+
+      s.foods.push(food);
+      save();
+      closeModal('manual-modal');
+      render();
+    }
+
+    // Migrate ancienne structure si besoin
+    if (!localStorage.getItem('frigo_sessions') && localStorage.getItem('frigo_foods')) {
+      const oldFoods = JSON.parse(localStorage.getItem('frigo_foods') || '[]');
+      if (oldFoods.length > 0) {
+        const sid = nextSessionId++;
+        sessions.push({ id: sid, label: 'Import', type: 'manual', date: new Date().toISOString(), foods: oldFoods });
+        activeId = sid;
+        save();
+      }
+      localStorage.removeItem('frigo_foods');
+    }
+
+    // ── Notifications email ──
+    function getNotifEmail() { return localStorage.getItem('frigo_email') || ''; }
+
+    function updateNotifUI() {
+      const email = getNotifEmail();
+      const status = document.getElementById('notif-status-line');
+      const input  = document.getElementById('notif-email-input');
+      const wrap   = document.getElementById('notif-test-wrap');
+      if (email) {
+        if (status) status.textContent = `Actif · ${email}`;
+        if (input)  input.value = email;
+        if (wrap)   wrap.classList.remove('hidden');
+      } else {
+        if (status) status.textContent = 'Non configuré — clique pour ajouter ton email';
+        if (wrap)   wrap.classList.add('hidden');
+      }
+    }
+
+    function toggleNotifPanel() {
+      const panel   = document.getElementById('notif-panel');
+      const chevron = document.getElementById('notif-chevron');
+      const open    = !panel.classList.contains('hidden');
+      panel.classList.toggle('hidden', open);
+      chevron.style.transform = open ? '' : 'rotate(180deg)';
+    }
+
+    function saveNotifEmail() {
+      const val = document.getElementById('notif-email-input').value.trim();
+      if (!val || !val.includes('@')) { alert('Adresse email invalide.'); return; }
+      localStorage.setItem('frigo_email', val);
+      localStorage.removeItem('frigo_notif_date');
+      updateNotifUI();
+      const btn = document.querySelector('#notif-panel button[onclick="saveNotifEmail()"]');
+      if (btn) { btn.textContent = '✓ Sauvegardé'; btn.style.background = '#16A34A'; setTimeout(() => { btn.textContent = 'Sauvegarder'; btn.style.background = '#6366F1'; }, 2000); }
+    }
+
+    async function sendExpiryNotif(force = false) {
+      const email = getNotifEmail();
+      if (!email) return;
+      const today = new Date().toISOString().slice(0, 10);
+      if (!force && localStorage.getItem('frigo_notif_date') === today) return;
+      const allFoods = sessions.flatMap(s => s.foods).filter(f => f.expiry);
+      if (allFoods.length === 0 && !force) return;
+      try {
+        const res  = await fetch('/notify-expiry', {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ email, items: allFoods.map(f => ({ name: f.name, emoji: f.emoji || '🥗', expiry: f.expiry })) }),
+        });
+        const data = await res.json();
+        localStorage.setItem('frigo_notif_date', today);
+        return data;
+      } catch(e) { console.warn('Notif email failed:', e.message); }
+    }
+
+    async function testNotification() {
+      const btn = document.getElementById('notif-test-btn');
+      btn.innerHTML = `<svg class="w-3 h-3 spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Envoi…`;
+      btn.style.pointerEvents = 'none';
+      const data = await sendExpiryNotif(true);
+      if (data?.sent) {
+        btn.innerHTML = '✓ Email envoyé !';
+        btn.style.background = 'rgba(22,163,74,0.2)';
+        btn.style.color = '#6EE7B7';
+      } else if (data?.error) {
+        btn.innerHTML = '✗ Erreur : ' + data.error;
+        btn.style.color = '#F87171';
+      } else {
+        btn.innerHTML = 'Aucun aliment proche de la péremption';
+      }
+      setTimeout(() => {
+        btn.innerHTML = `<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg> Envoyer un email de test maintenant`;
+        btn.style.background = ''; btn.style.color = 'rgba(139,148,255,0.9)'; btn.style.pointerEvents = '';
+      }, 4000);
+    }
+
+    render();
+    renderHistory();
+    restoreHistoryPanel();
+    updateScanBtn();
+    updateNotifUI();
+    sendExpiryNotif();
+  </script>
+
+</body>
+</html>

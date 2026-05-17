@@ -1,0 +1,15 @@
+{
+  "name": "frigo-ia",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --use-system-ca server.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "nodemailer": "^8.0.7",
+    "openai": "^6.38.0",
+    "stripe": "^22.1.1"
+  }
+}
